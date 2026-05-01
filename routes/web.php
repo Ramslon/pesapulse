@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ExpenseController;
 
 Route::get('/test', function () {
     return "PesaPulse is running!";
 });
-
 
 Route::get('/practice', function () {
     $name = "Ramson";
@@ -16,3 +16,5 @@ Route::get('/practice', function () {
         "total" => array_sum($expenses)
     ];
 });
+
+Route::resource('expenses', ExpenseController::class);
