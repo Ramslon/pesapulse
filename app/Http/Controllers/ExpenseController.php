@@ -47,5 +47,29 @@ class ExpenseController extends Controller
 
         return "Expense added successfully";
     }
+    public function destroy($id)
+    {
+        $expense=Expense::findOrFail($id);
+
+        $expense->delete();
+
+        return "Expense deleted Successfully";
+        
+    }
+    public function update(Request $request, $id)
+    {
+        $expense=Expense::findOrFail($id);
+
+        $expense->update([
+            'title'=> $request->title,
+            'amount'=> $request->amount,
+            'category'=> $request->category,
+            'expense_date'=> $request->expense_date,
+            'description'=> $request->description,
+        ]);
+
+        return "Expense updated successfully";
+    
+    }
 }
 
