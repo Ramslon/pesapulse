@@ -71,5 +71,17 @@ class ExpenseController extends Controller
         return "Expense updated successfully";
     
     }
+
+    public function show($id)
+    {
+        return Expense::findOrFail($id);
+
+    }
+    
+    public function edit($id)
+    {
+        return "Edit form for expense" . $id;
+
+    }
 }
 
