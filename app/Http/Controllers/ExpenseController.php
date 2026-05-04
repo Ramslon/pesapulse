@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Models\Expense;
 use Illuminate\Http\Request;
 
@@ -9,7 +10,7 @@ class ExpenseController extends Controller
 {
     public function index()
     {
-        return Expense::all();
+        return Expense::where('user_id', auth::id())->get();
     }
       // Creating a simple form methods
     public function create()
@@ -36,7 +37,8 @@ class ExpenseController extends Controller
       //Addding real insert logic
     public function store(Request $request)
     {
-        Expense::create([
+        $expense=Expense::create([
+            'user_id' => auth::id(),
             'title'=> $request->title,
             'amount'=> $request->amount,
             'category'=> $request->category,
@@ -45,7 +47,7 @@ class ExpenseController extends Controller
         ]);
 
 
-        return "Expense added successfully";
+        return response()->json($expense);
     }
     //Added Delete Expense
     public function destroy($id)
