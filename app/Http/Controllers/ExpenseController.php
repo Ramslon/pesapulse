@@ -47,6 +47,7 @@ class ExpenseController extends Controller
 
         return "Expense added successfully";
     }
+    //Added Delete Expense
     public function destroy($id)
     {
         $expense=Expense::findOrFail($id);
@@ -56,6 +57,7 @@ class ExpenseController extends Controller
         return "Expense deleted Successfully";
         
     }
+    //Add Update Expense
     public function update(Request $request, $id)
     {
         $expense=Expense::findOrFail($id);
@@ -71,17 +73,19 @@ class ExpenseController extends Controller
         return "Expense updated successfully";
     
     }
-
+    // Add Show Expense
     public function show($id)
     {
         return Expense::findOrFail($id);
 
     }
-    
+    //Add Edit Expense 
     public function edit($id)
     {
         return "Edit form for expense" . $id;
 
     }
+        
+    
 }
 
