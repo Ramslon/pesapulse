@@ -60,21 +60,32 @@ class ExpenseController extends Controller
         
     }
     //Add Update Expense
+
     public function update(Request $request, $id)
     {
-        $expense=Expense::findOrFail($id);
-
-        $expense->update([
-            'title'=> $request->title,
-            'amount'=> $request->amount,
-            'category'=> $request->category,
-            'expense_date'=> $request->expense_date,
-            'description'=> $request->description,
+        $request->validate([
+             'title' => 'required',
+             'amount' => 'required|numeric',
+             'category' => 'required',
+             'expense_date' => 'required|date',
         ]);
 
-        return "Expense updated successfully";
-    
+        $expense = Expense::where('user_id', Auth::id())->findOrFail($id);
+
+        $expense->update([
+             'title' => $request->title,
+             'amount' => $request->amount,
+             'category' => $request->category,
+             'expense_date' => $request->expense_date,
+             'description' => $request->description,
+        ]);
+
+        return response()->json([
+             'message' => 'Expense updated successfully',
+             'expense' => $expense
+        ]);
     }
+    
     // Add Show Expense
     public function show($id)
     {
