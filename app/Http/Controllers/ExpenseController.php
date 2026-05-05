@@ -50,14 +50,17 @@ class ExpenseController extends Controller
         return response()->json($expense);
     }
     //Added Delete Expense
+    
     public function destroy($id)
     {
-        $expense=Expense::findOrFail($id);
+        $expense = Expense::where('user_id', Auth::id())
+                      ->findOrFail($id);
 
         $expense->delete();
 
-        return "Expense deleted Successfully";
-        
+        return response()->json([
+             'message' => 'Expense deleted successfully'
+        ]);
     }
     //Add Update Expense
 
