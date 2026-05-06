@@ -12,6 +12,25 @@ class ExpenseController extends Controller
     {
         return Expense::where('user_id', auth::id())->get();
     }
+    // Adding search expenses
+    public function search (Request $request)
+    {
+        $query = Expense::where('user_id', Auth::id());
+
+        if ($request->title) {
+        $query->where('title', 'LIKE', '%' . $request->title . '%');
+
+        if ($request->category) {
+        $query->where('category', 'LIKE', '%' . $request->category . '%');
+    }
+    
+        return response()->json(
+        $query->get()
+    );
+
+    }
+
+    }
       // Creating a simple form methods
     public function create()
     {

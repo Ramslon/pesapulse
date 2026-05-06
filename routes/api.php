@@ -13,7 +13,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
+    Route::get('/expenses/search', [ExpenseController::class, 'search']);
     Route::apiResource('expenses', ExpenseController::class);
 
 });
