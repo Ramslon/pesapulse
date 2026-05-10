@@ -14,6 +14,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
     Route::get('/expenses/search', [ExpenseController::class, 'search']);
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('expenses', ExpenseController::class);
 
 });

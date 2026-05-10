@@ -66,7 +66,7 @@ class ExpenseController extends Controller
         ]);
 
 
-        return response()->json($expense);
+        return response()->json($expense, 201);
     }
     //Added Delete Expense
     
