@@ -8,9 +8,12 @@ use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Expense::where('user_id', auth::id())->get();
+    return $request->user()
+        ->expenses()
+        ->latest()
+        ->paginate(5);
     }
     // Adding search expenses
     public function search (Request $request)
