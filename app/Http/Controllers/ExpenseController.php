@@ -123,6 +123,24 @@ class ExpenseController extends Controller
         return "Edit form for expense" . $id;
 
     }
+
+    public function analytics(Request $request)
+{
+    $expenses = $request->user()->expenses;
+
+    $total = $expenses->sum('amount');
+
+    $categories = $expenses
+        ->groupBy('category')
+        ->map(function ($items) {
+            return $items->sum('amount');
+        });
+
+    return response()->json([
+        'total_spending' => $total,
+        'categories' => $categories,
+    ]);
+}
         
     
 }
