@@ -20,3 +20,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('expenses', ExpenseController::class);
 
 });
+
+Route::middleware('auth:sanctum')->get('/dashboard-summary', function (Request $request) {
+
+    $user = $request->user();
+
+    return response()->json([
+        'total_expenses' => $user->expenses()->sum('amount'),
+        'total_count' => $user->expenses()->count(),
+        'categories' => $user->expenses()->distinct('category')->count(),
+    ]);
+});
