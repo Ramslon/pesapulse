@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ExpenseController;
 
 Route::get('/test', function () {
     return "PesaPulse is running!";
@@ -17,4 +16,3 @@ Route::get('/practice', function () {
     ];
 });
 
-Route::resource('expenses', ExpenseController::class);
