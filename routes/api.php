@@ -16,6 +16,12 @@ Route::post('/login', [
     'login'
 ]);
 
+Route::get('/test', function () {
+    return response()->json([
+        'message' => 'API works'
+    ]);
+});
+
 Route::middleware('auth:sanctum')
     ->group(function () {
 
