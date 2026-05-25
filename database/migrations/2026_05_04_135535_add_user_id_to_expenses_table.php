@@ -7,23 +7,25 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up(): void
-    {
-        Schema::table('expenses', function (Blueprint $table) {
+{
+    Schema::table('expenses', function (Blueprint $table) {
 
-            $table->foreign('user_id')
-              ->references('id')
-              ->on('users')
-              ->onDelete('cascade');
+        $table->foreignId('user_id')
+            ->constrained()
+            ->onDelete('cascade');
 
-        });
-    }
+    });
+}
+
 
     public function down(): void
-    {
-        Schema::table('expenses', function (Blueprint $table) {
+{
+    Schema::table('expenses', function (Blueprint $table) {
 
-            $table->dropForeign(['user_id']);
+        $table->dropForeign(['user_id']);
 
-        });
-    }
+        $table->dropColumn('user_id');
+
+    });
+}
 };
