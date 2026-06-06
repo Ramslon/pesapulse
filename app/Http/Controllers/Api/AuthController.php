@@ -102,4 +102,19 @@ class AuthController extends Controller
             'user' => $user
         ]);
     }
+
+    public function updatePreferences(Request $request)
+{
+    $user = $request->user();
+
+    $user->update([
+        'daily_reminder' => $request->daily_reminder,
+        'expense_alerts' => $request->expense_alerts,
+        'weekly_summary' => $request->weekly_summary,
+    ]);
+
+    return response()->json([
+        'message' => 'Preferences updated successfully'
+    ]);
+}
 }

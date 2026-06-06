@@ -89,4 +89,6 @@ Route::middleware('auth:sanctum')
         'expenses',
         ExpenseController::class
     );
+
+    Route::put('/preferences', [AuthController::class, 'updatePreferences']);
 });
