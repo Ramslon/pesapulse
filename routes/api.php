@@ -3,7 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
+
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 
 Route::post('/register', [
@@ -91,4 +93,8 @@ Route::middleware('auth:sanctum')
     );
 
     Route::put('/preferences', [AuthController::class, 'updatePreferences']);
+
+    Route::post('/budget', [BudgetController::class, 'store']);
+
+    Route::get('/budget-summary', [BudgetController::class, 'summary']);
 });
