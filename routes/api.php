@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\GoalController;
 
 Route::post('/register', [
     AuthController::class,
@@ -97,4 +98,10 @@ Route::middleware('auth:sanctum')
     Route::post('/budget', [BudgetController::class, 'store']);
 
     Route::get('/budget-summary', [BudgetController::class, 'summary']);
+
+    Route::post('/goals', [GoalController::class, 'store']);
+
+    Route::get('/goals', [GoalController::class, 'index']);
+
+    Route::get('/goals/{goal}/progress', [GoalController::class, 'progress']);
 });
