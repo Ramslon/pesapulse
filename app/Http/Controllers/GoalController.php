@@ -55,4 +55,20 @@ public function index(Request $request)
         'percentage' => $percentage,
     ]);
 }
+
+public function updateProgress(Request $request, Goal $goal)
+{
+    $request->validate([
+        'amount' => 'required|numeric|min:1'
+    ]);
+
+    $goal->saved_amount += $request->amount;
+
+    $goal->save();
+
+    return response()->json([
+        'message' => 'Goal updated successfully',
+        'goal' => $goal
+    ]);
+}
 }
