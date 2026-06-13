@@ -103,10 +103,17 @@ Route::middleware('auth:sanctum')
 
     Route::get('/goals', [GoalController::class, 'index']);
 
+    Route::get(
+    '/goals/analytics',
+    [GoalController::class, 'analytics']
+);
+
     Route::get('/goals/{goal}/progress', [GoalController::class, 'progress']);
 
     Route::put(
     '/goals/{goal}/progress',
     [GoalController::class, 'updateProgress']
 );
+    
+    
 });

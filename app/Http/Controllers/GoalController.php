@@ -71,4 +71,30 @@ public function updateProgress(Request $request, Goal $goal)
         'goal' => $goal
     ]);
 }
+
+public function analytics(Request $request)
+{
+    $user = $request->user();
+
+    $goals = $user->goals;
+
+    $totalGoals = $goals->count();
+
+    $completedGoals = $goals->filter(function ($goal) {
+        return $goal->saved_amount >= $goal->target_amount;
+    })->count();
+
+    $activeGoals = $totalGoals - $completedGoals;
+
+    $completionRate = $totalGoals > 0
+        ? round(($completedGoals / $totalGoals) * 100, 2)
+        : 0;
+
+    return response()->json([
+        'total_goals' => $totalGoals,
+        'completed_goals' => $completedGoals,
+        'active_goals' => $activeGoals,
+        'completion_rate' => $completionRate,
+    ]);
+}
 }
