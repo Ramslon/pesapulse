@@ -111,10 +111,25 @@ class AuthController extends Controller
         'daily_reminder' => $request->daily_reminder,
         'expense_alerts' => $request->expense_alerts,
         'weekly_summary' => $request->weekly_summary,
+
+        'dark_mode' => $request->dark_mode,
+        'notifications' => $request->notifications,
     ]);
 
     return response()->json([
         'message' => 'Preferences updated successfully'
+    ]);
+}
+
+public function getPreferences(Request $request)
+{
+    return response()->json([
+        'daily_reminder' => $request->user()->daily_reminder,
+        'expense_alerts' => $request->user()->expense_alerts,
+        'weekly_summary' => $request->user()->weekly_summary,
+
+        'dark_mode' => $request->user()->dark_mode,
+        'notifications' => $request->user()->notifications,
     ]);
 }
 }

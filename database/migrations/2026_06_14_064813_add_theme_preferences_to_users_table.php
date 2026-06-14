@@ -12,19 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-             $table->boolean('daily_reminder')
-              ->default(true);
-
-        $table->boolean('expense_alerts')
-              ->default(true);
-
-        $table->boolean('weekly_summary')
-              ->default(false);
-        
-        $table->boolean('dark_mode')->default(false);
-        $table->boolean('notifications')->default(true);
-    });
-            
+            //
+        });
     }
 
     /**
@@ -33,10 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-             $table->dropColumn([
-                'dark_mode',
-                'notifications'
-            ]);
+            //
         });
     }
 };

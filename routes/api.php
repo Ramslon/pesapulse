@@ -95,6 +95,8 @@ Route::middleware('auth:sanctum')
 
     Route::put('/preferences', [AuthController::class, 'updatePreferences']);
 
+    Route::get('/preferences', [AuthController::class, 'getPreferences']);
+
     Route::post('/budget', [BudgetController::class, 'store']);
 
     Route::get('/budget-summary', [BudgetController::class, 'summary']);
@@ -114,6 +116,8 @@ Route::middleware('auth:sanctum')
     '/goals/{goal}/progress',
     [GoalController::class, 'updateProgress']
 );
+
+    
     
     
 });

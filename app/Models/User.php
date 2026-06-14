@@ -26,6 +26,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+
+        'daily_reminder',
+        'expense_alerts',
+        'weekly_summary',
+        
+        'dark_mode',
+        'notifications',
     ];
 
     /**
