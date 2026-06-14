@@ -30,9 +30,9 @@ class User extends Authenticatable
         'daily_reminder',
         'expense_alerts',
         'weekly_summary',
-        
+
         'dark_mode',
-        'notifications',
+        'notifications_enabled ',
     ];
 
     /**

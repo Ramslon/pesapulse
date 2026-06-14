@@ -6,21 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('dark_mode')->default(false);
-            $table->boolean('notifications_enabled')->default(true);
+             $table->boolean('dark_mode')->default(false);
+        $table->boolean('notifications_enabled')->default(true);
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
-                'dark_mode',
-                'notifications_enabled'
-            ]);
+            'dark_mode',
+            'notifications_enabled',
+        ]);
         });
     }
 };

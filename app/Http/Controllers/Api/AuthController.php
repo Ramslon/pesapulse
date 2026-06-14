@@ -113,7 +113,7 @@ class AuthController extends Controller
         'weekly_summary' => $request->weekly_summary,
 
         'dark_mode' => $request->dark_mode,
-        'notifications' => $request->notifications,
+        'notifications_enabled' => $request->notifications_enabled,
     ]);
 
     return response()->json([
@@ -129,7 +129,7 @@ public function getPreferences(Request $request)
         'weekly_summary' => $request->user()->weekly_summary,
 
         'dark_mode' => $request->user()->dark_mode,
-        'notifications' => $request->user()->notifications,
+        'notifications_enabled' => $request->user()->notifications_enabled,
     ]);
 }
 }
