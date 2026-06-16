@@ -19,7 +19,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
                 'dark_mode',
-                'notifications_enabled'
+                'notifications_enabled',
             ]);
         });
     }

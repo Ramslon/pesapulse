@@ -41,10 +41,13 @@ Route::middleware('auth:sanctum')
         return $request->user();
     });
 
+    Route::get('/profile', [AuthController::class, 'getProfile']);
+
     Route::put('/profile', [
         AuthController::class,
         'updateProfile'
     ]);
+
 
     Route::post('/logout', [
         AuthController::class,

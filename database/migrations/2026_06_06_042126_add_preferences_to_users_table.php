@@ -21,8 +21,7 @@ return new class extends Migration
         $table->boolean('weekly_summary')
               ->default(false);
         
-        $table->boolean('dark_mode')->default(false);
-        $table->boolean('notifications')->default(true);
+        
     });
             
     }
@@ -33,10 +32,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-             $table->dropColumn([
-                'dark_mode',
-                'notifications'
-            ]);
+             
         });
     }
 };

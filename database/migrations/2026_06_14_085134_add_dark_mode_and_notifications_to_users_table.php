@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
              $table->boolean('dark_mode')->default(false);
-        $table->boolean('notifications_enabled')->default(true);
+             $table->boolean('notifications_enabled')->default(true);
         });
     }
 
