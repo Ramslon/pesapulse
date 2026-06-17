@@ -44,4 +44,54 @@ public function summary(Request $request)
     ]);
 }
     
+   public function financialInsights(Request $request)
+{
+    $user = $request->user();
+
+    $budget = $user->budgets()->latest()->first();
+
+    if (!$budget) {
+        return response()->json([
+            'message' => 'No budget found'
+        ]);
+    }
+
+    $spent = $user->expenses()->sum('amount');
+
+    $budgetAmount = $budget->amount;
+
+    $remaining = $budgetAmount - $spent;
+
+    $percentage =
+        $budgetAmount > 0
+        ? round(($spent / $budgetAmount) * 100, 1)
+        : 0;
+
+    $status = 'healthy';
+
+    $recommendation =
+        'Your spending is under control.';
+
+    if ($percentage >= 100) {
+        $status = 'overspent';
+
+        $recommendation =
+            'You have exceeded your budget. Review non-essential expenses.';
+    }
+    elseif ($percentage >= 80) {
+        $status = 'warning';
+
+        $recommendation =
+            'You have used more than 80% of your budget. Spend carefully.';
+    }
+
+    return response()->json([
+        'budget' => $budgetAmount,
+        'spent' => $spent,
+        'remaining' => $remaining,
+        'usage_percentage' => $percentage,
+        'status' => $status,
+        'recommendation' => $recommendation,
+    ]);
+}
 }

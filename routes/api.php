@@ -102,6 +102,8 @@ Route::middleware('auth:sanctum')
 
     Route::post('/budget', [BudgetController::class, 'store']);
 
+    Route::get('/financial-insights',[BudgetController::class, 'financialInsights']);
+
     Route::get('/budget-summary', [BudgetController::class, 'summary']);
 
     Route::post('/goals', [GoalController::class, 'store']);
