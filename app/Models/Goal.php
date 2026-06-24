@@ -12,6 +12,11 @@ class Goal extends Model
         'target_amount',
         'saved_amount',
         'target_date',
+
+        'milestone_25_notified',
+    'milestone_50_notified',
+    'milestone_75_notified',
+    'milestone_100_notified',
     ];
 
     public function user()

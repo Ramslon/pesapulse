@@ -64,14 +64,78 @@ public function updateProgress(Request $request, Goal $goal)
 
     $goal->saved_amount += $request->amount;
 
+    $percentage = 0;
+
+    if ($goal->target_amount > 0) {
+        $percentage = round(
+            ($goal->saved_amount / $goal->target_amount) * 100,
+            2
+        );
+    }
+
+    $milestoneReached = null;
+
+    if (
+        $percentage >= 100 &&
+        !$goal->milestone_100_notified
+    ) {
+        $goal->milestone_100_notified = true;
+
+        $milestoneReached = [
+            'percentage' => 100,
+            'message' =>
+                "Congratulations! You've completed your goal."
+        ];
+    }
+
+    elseif (
+        $percentage >= 75 &&
+        !$goal->milestone_75_notified
+    ) {
+        $goal->milestone_75_notified = true;
+
+        $milestoneReached = [
+            'percentage' => 75,
+            'message' =>
+                "Amazing! You've reached 75% of your goal."
+        ];
+    }
+
+    elseif (
+        $percentage >= 50 &&
+        !$goal->milestone_50_notified
+    ) {
+        $goal->milestone_50_notified = true;
+
+        $milestoneReached = [
+            'percentage' => 50,
+            'message' =>
+                "Great progress! You've reached 50% of your goal."
+        ];
+    }
+
+    elseif (
+        $percentage >= 25 &&
+        !$goal->milestone_25_notified
+    ) {
+        $goal->milestone_25_notified = true;
+
+        $milestoneReached = [
+            'percentage' => 25,
+            'message' =>
+                "Nice start! You've reached 25% of your goal."
+        ];
+    }
+
     $goal->save();
 
     return response()->json([
         'message' => 'Goal updated successfully',
-        'goal' => $goal
+        'goal' => $goal,
+        'percentage' => $percentage,
+        'milestone' => $milestoneReached,
     ]);
 }
-
 public function analytics(Request $request)
 {
     $user = $request->user();
