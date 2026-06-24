@@ -87,6 +87,10 @@ public function summary(Request $request)
         $status = 'warning';
         $recommendation = 'You have used more than 80% of your budget. Spend carefully.';
     }
+    elseif ($percentage < 80) {
+        $status = 'healthy';
+        $recommendation = 'You have used less than 80% of your budget.Your spending is under control.';
+    }
 
     // CATEGORY ANALYSIS
     $categoryTotals = [];
