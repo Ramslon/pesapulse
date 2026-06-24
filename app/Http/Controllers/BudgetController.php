@@ -75,7 +75,12 @@ public function summary(Request $request)
 
     $recommendation = 'Your spending is under control.';
 
-    if ($percentage >= 100) {
+    if ($percentage >= 200) {
+        $status = 'critical';
+        $recommendation =
+        'Your spending is more than double your budget. Immediate review is recommended.';
+    }
+    elseif ($percentage >= 100) {
         $status = 'overspent';
         $recommendation = 'You have exceeded your budget. Review non-essential expenses.';
     } elseif ($percentage >= 80) {
