@@ -137,6 +137,26 @@ public function updateProgress(Request $request, Goal $goal)
     ]);
 }
 
+public function update(Request $request, Goal $goal)
+{
+    $request->validate([
+        'title' => 'sometimes|string|max:255',
+        'target_amount' => 'sometimes|numeric|min:1',
+        'target_date' => 'nullable|date',
+    ]);
+
+    $goal->update($request->only([
+        'title',
+        'target_amount',
+        'target_date',
+    ]));
+
+    return response()->json([
+        'message' => 'Goal updated successfully',
+        'goal' => $goal,
+    ]);
+}
+
 public function upcomingDeadlines(Request $request)
 {
     $goals = $request->user()
