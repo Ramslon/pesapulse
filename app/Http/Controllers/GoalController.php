@@ -211,4 +211,65 @@ public function analytics(Request $request)
         'completion_rate' => $completionRate,
     ]);
 }
+
+public function insights(Goal $goal)
+{
+    $targetAmount = $goal->target_amount;
+    $savedAmount = $goal->saved_amount;
+
+    $remainingAmount = max(
+        0,
+        $targetAmount - $savedAmount
+    );
+
+    $daysRemaining = 0;
+
+    if ($goal->target_date) {
+        $daysRemaining = now()->diffInDays(
+            $goal->target_date,
+            false
+        );
+    }
+
+    $monthlyNeeded = 0;
+
+    if ($daysRemaining > 0) {
+
+        $monthsRemaining =
+            max(1, ceil($daysRemaining / 30));
+
+        $monthlyNeeded =
+            round(
+                $remainingAmount / $monthsRemaining,
+                2
+            );
+    }
+
+    $status = 'healthy';
+
+    if ($daysRemaining <= 30 &&
+        $remainingAmount > 0) {
+        $status = 'urgent';
+    }
+
+    if ($savedAmount >= $targetAmount) {
+        $status = 'completed';
+    }
+
+    return response()->json([
+        'goal' => $goal->title,
+
+        'remaining_amount' =>
+            $remainingAmount,
+
+        'days_remaining' =>
+            $daysRemaining,
+
+        'monthly_needed' =>
+            $monthlyNeeded,
+
+        'status' =>
+            $status,
+    ]);
+}
 }
