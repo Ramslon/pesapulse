@@ -168,9 +168,10 @@ public function upcomingDeadlines(Request $request)
 
     foreach ($goals as $goal) {
 
-        $daysRemaining = now()->diffInDays(
+        $daysRemaining = ceil(now()->diffInDays(
             $goal->target_date,
             false
+          )
         );
 
         if ($daysRemaining <= 7 && $daysRemaining >= 0) {
