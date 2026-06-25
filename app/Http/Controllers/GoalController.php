@@ -225,9 +225,10 @@ public function insights(Goal $goal)
     $daysRemaining = 0;
 
     if ($goal->target_date) {
-        $daysRemaining = now()->diffInDays(
+        $daysRemaining = ceil(now()->diffInDays(
             $goal->target_date,
             false
+           )
         );
     }
 
@@ -256,6 +257,16 @@ public function insights(Goal $goal)
         $status = 'completed';
     }
 
+    $message = '';
+
+if ($status === 'completed') {
+    $message = 'Congratulations! Goal achieved.';
+} elseif ($status === 'urgent') {
+    $message = 'Increase savings to reach your goal before the deadline.';
+} else {
+    $message = 'You are on track toward your goal.';
+}
+
     return response()->json([
         'goal' => $goal->title,
 
@@ -270,6 +281,9 @@ public function insights(Goal $goal)
 
         'status' =>
             $status,
+        
+        'message' =>
+            $message,
     ]);
 }
 }
