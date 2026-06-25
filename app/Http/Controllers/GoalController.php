@@ -136,6 +136,35 @@ public function updateProgress(Request $request, Goal $goal)
         'milestone' => $milestoneReached,
     ]);
 }
+
+public function upcomingDeadlines(Request $request)
+{
+    $goals = $request->user()
+        ->goals()
+        ->whereNotNull('target_date')
+        ->get();
+
+    $alerts = [];
+
+    foreach ($goals as $goal) {
+
+        $daysRemaining = now()->diffInDays(
+            $goal->target_date,
+            false
+        );
+
+        if ($daysRemaining <= 7 && $daysRemaining >= 0) {
+            $alerts[] = [
+                'goal_id' => $goal->id,
+                'title' => $goal->title,
+                'days_remaining' => $daysRemaining,
+                'target_date' => $goal->target_date,
+            ];
+        }
+    }
+
+    return response()->json($alerts);
+}
 public function analytics(Request $request)
 {
     $user = $request->user();
