@@ -291,7 +291,7 @@ public function forecast(Request $request, Goal $goal)
 {
 
     abort_unless(
-    $goal->user_id === $request->user()->id(),
+    $goal->user_id === $request->user()->id,
     403
     );
     $today = now();
