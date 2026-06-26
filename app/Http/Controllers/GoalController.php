@@ -328,6 +328,7 @@ public function forecast(Request $request, Goal $goal)
         0,
         $today->diffInDays($targetDate, false)
     );
+    
 
     $expectedProgress = ($elapsedDays / $totalDays) * 100;
 
@@ -340,6 +341,19 @@ public function forecast(Request $request, Goal $goal)
     } else {
         $status = 'behind';
     }
+
+    if ($remainingAmount <= 0) {
+    return response()->json([
+        'goal' => $goal->title,
+        'forecast' => 'completed',
+        'actual_progress' => round(($saved / $target) * 100, 2),
+        'expected_progress' => round($expectedProgress, 2),
+        'remaining_amount' => 0,
+        'remaining_days' => 0,
+        'estimated_completion_date' => now()->toDateString(),
+        'recommended_monthly_saving' => 0,
+    ]);
+}
 
     $dailySavingRate = $saved / $elapsedDays;
 
