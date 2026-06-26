@@ -120,6 +120,8 @@ Route::middleware('auth:sanctum')
 
     Route::get('/goals/{goal}/insights', [GoalController::class, 'insights']);
 
+    Route::get('/goals/{goal}/forecast', [GoalController::class, 'forecast']);
+
     Route::put('/goals/{goal}', [GoalController::class, 'update']);
  
 });

@@ -286,4 +286,92 @@ if ($status === 'completed') {
             $message,
     ]);
 }
+
+public function forecast(Request $request, Goal $goal)
+{
+
+    abort_unless(
+    $goal->user_id === $request->user()->id(),
+    403
+    );
+    $today = now();
+
+    $targetDate = $goal->target_date
+        ? \Carbon\Carbon::parse($goal->target_date)
+        : null;
+
+    $saved = $goal->saved_amount;
+    $target = $goal->target_amount;
+
+    $remainingAmount = max(0, $target - $saved);
+
+    if (!$targetDate) {
+        return response()->json([
+            'forecast' => 'No target date',
+            'message' => 'Forecast unavailable because no target date was set.'
+        ]);
+    }
+
+    $totalDays = max(
+        1,
+        \Carbon\Carbon::parse($goal->created_at)
+            ->diffInDays($targetDate)
+    );
+
+    $elapsedDays = max(
+        1,
+        \Carbon\Carbon::parse($goal->created_at)
+            ->diffInDays($today)
+    );
+
+    $remainingDays = max(
+        0,
+        $today->diffInDays($targetDate, false)
+    );
+
+    $expectedProgress = ($elapsedDays / $totalDays) * 100;
+
+    $actualProgress = ($saved / $target) * 100;
+
+    if ($actualProgress >= ($expectedProgress + 10)) {
+        $status = 'ahead';
+    } elseif ($actualProgress >= ($expectedProgress - 10)) {
+        $status = 'on_track';
+    } else {
+        $status = 'behind';
+    }
+
+    $dailySavingRate = $saved / $elapsedDays;
+
+    if ($dailySavingRate > 0) {
+        $estimatedDays = ceil($remainingAmount / $dailySavingRate);
+
+        $estimatedCompletionDate = now()
+            ->addDays($estimatedDays)
+            ->toDateString();
+    } else {
+        $estimatedCompletionDate = null;
+    }
+
+    return response()->json([
+        'goal' => $goal->title,
+
+        'forecast' => $status,
+
+        'actual_progress' => round($actualProgress, 2),
+
+        'expected_progress' => round($expectedProgress, 2),
+
+        'remaining_amount' => round($remainingAmount, 2),
+
+        'remaining_days' => $remainingDays,
+
+        'estimated_completion_date' => $estimatedCompletionDate,
+
+        'recommended_monthly_saving' =>
+            $remainingDays > 0
+                ? round(($remainingAmount / $remainingDays) * 30, 2)
+                : 0,
+    ]);
+}
 }
