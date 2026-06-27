@@ -12,6 +12,7 @@ class Goal extends Model
         'target_amount',
         'saved_amount',
         'target_date',
+        'is_archived',
 
         'milestone_25_notified',
         'milestone_50_notified',

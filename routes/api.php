@@ -122,6 +122,10 @@ Route::middleware('auth:sanctum')
 
     Route::get('/goals/{goal}/forecast', [GoalController::class, 'forecast']);
 
+    Route::get('/goals/archived', [GoalController::class, 'archived']);
+
     Route::put('/goals/{goal}', [GoalController::class, 'update']);
+
+    Route::put('/goals/{goal}/archive', [GoalController::class, 'archive']);
  
 });

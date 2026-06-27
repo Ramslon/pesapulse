@@ -33,9 +33,26 @@ public function index(Request $request)
     return response()->json(
         $request->user()
             ->goals()
+            ->where('is_archived', false)
             ->latest()
             ->get()
     );
+}
+
+public function archive(Request $request, Goal $goal)
+{
+    abort_unless(
+        $goal->user_id === $request->user()->id,
+        403
+    );
+
+    $goal->update([
+        'is_archived' => true,
+    ]);
+
+    return response()->json([
+        'message' => 'Goal archived successfully.',
+    ]);
 }
  public function progress(Goal $goal)
 {
@@ -394,3 +411,4 @@ public function forecast(Request $request, Goal $goal)
     ]);
 }
 }
+
