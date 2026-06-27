@@ -421,13 +421,33 @@ public function archive(Request $request, Goal $goal)
 
 public function archived(Request $request)
 {
-    return response()->json(
-        $request->user()
-            ->goals()
-            ->where('is_archived', true)
-            ->latest()
-            ->get()
-    );
+    $goals = $request->user()
+        ->goals()
+        ->where('is_archived', true)
+        ->whereColumn('saved_amount', '>=', 'target_amount')
+        ->latest()
+        ->get();
+
+    $goals = $goals->map(function ($goal) {
+
+        $percentage = $goal->target_amount > 0
+            ? round(($goal->saved_amount / $goal->target_amount) * 100, 2)
+            : 0;
+
+        return [
+            'id' => $goal->id,
+            'title' => $goal->title,
+            'target_amount' => $goal->target_amount,
+            'saved_amount' => $goal->saved_amount,
+            'target_date' => $goal->target_date,
+            'completed_percentage' => $percentage,
+            'achievement' => 'Completed',
+            'archived' => true,
+            'completed_at' => $goal->updated_at->toDateString(),
+        ];
+    });
+
+    return response()->json($goals);
 }
 
 }
