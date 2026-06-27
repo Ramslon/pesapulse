@@ -39,21 +39,7 @@ public function index(Request $request)
     );
 }
 
-public function archive(Request $request, Goal $goal)
-{
-    abort_unless(
-        $goal->user_id === $request->user()->id,
-        403
-    );
 
-    $goal->update([
-        'is_archived' => true,
-    ]);
-
-    return response()->json([
-        'message' => 'Goal archived successfully.',
-    ]);
-}
  public function progress(Goal $goal)
 {
     $percentage = 0;
@@ -410,5 +396,39 @@ public function forecast(Request $request, Goal $goal)
         'recommended_monthly_saving' => $recommendedMonthlySaving,
     ]);
 }
+
+public function archive(Request $request, Goal $goal)
+{
+    abort_unless(
+        $goal->user_id === $request->user()->id,
+        403
+    );
+
+    if ($goal->saved_amount < $goal->target_amount) {
+        return response()->json([
+            'message' => 'Only completed goals can be archived.'
+        ], 400);
+    }
+
+    $goal->update([
+        'is_archived' => true,
+    ]);
+
+    return response()->json([
+        'message' => 'Goal archived successfully.',
+    ]);
+}
+
+public function archived(Request $request)
+{
+    return response()->json(
+        $request->user()
+            ->goals()
+            ->where('is_archived', true)
+            ->latest()
+            ->get()
+    );
+}
+
 }
 
