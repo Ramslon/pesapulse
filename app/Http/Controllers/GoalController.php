@@ -289,11 +289,11 @@ if ($status === 'completed') {
 
 public function forecast(Request $request, Goal $goal)
 {
-
     abort_unless(
-    $goal->user_id === $request->user()->id,
-    403
+        $goal->user_id === $request->user()->id,
+        403
     );
+
     $today = now();
 
     $targetDate = $goal->target_date
@@ -307,8 +307,9 @@ public function forecast(Request $request, Goal $goal)
 
     if (!$targetDate) {
         return response()->json([
-            'forecast' => 'No target date',
-            'message' => 'Forecast unavailable because no target date was set.'
+            'goal' => $goal->title,
+            'forecast' => 'no_target_date',
+            'message' => 'Forecast unavailable because no target date was set.',
         ]);
     }
 
@@ -326,34 +327,37 @@ public function forecast(Request $request, Goal $goal)
 
     $remainingDays = max(
         0,
-        $today->diffInDays($targetDate, false)
+        ceil($today->diffInDays($targetDate, false))
     );
-    
 
     $expectedProgress = ($elapsedDays / $totalDays) * 100;
-
     $actualProgress = ($saved / $target) * 100;
+
+    if ($remainingAmount <= 0) {
+        return response()->json([
+            'goal' => $goal->title,
+            'forecast' => 'completed',
+            'message' => 'Congratulations! You have completed this goal.',
+            'actual_progress' => round($actualProgress, 2),
+            'expected_progress' => round($expectedProgress, 2),
+            'remaining_amount' => 0,
+            'remaining_days' => 0,
+            'estimated_completion_date' => now()->toDateString(),
+            'recommended_daily_saving' => 0,
+            'recommended_monthly_saving' => 0,
+        ]);
+    }
 
     if ($actualProgress >= ($expectedProgress + 10)) {
         $status = 'ahead';
+        $message = 'Excellent! You are ahead of schedule.';
     } elseif ($actualProgress >= ($expectedProgress - 10)) {
         $status = 'on_track';
+        $message = 'Great! You are on track to reach your goal.';
     } else {
         $status = 'behind';
+        $message = 'You need to increase your savings to reach this goal.';
     }
-
-    if ($remainingAmount <= 0) {
-    return response()->json([
-        'goal' => $goal->title,
-        'forecast' => 'completed',
-        'actual_progress' => round(($saved / $target) * 100, 2),
-        'expected_progress' => round($expectedProgress, 2),
-        'remaining_amount' => 0,
-        'remaining_days' => 0,
-        'estimated_completion_date' => now()->toDateString(),
-        'recommended_monthly_saving' => 0,
-    ]);
-}
 
     $dailySavingRate = $saved / $elapsedDays;
 
@@ -367,25 +371,26 @@ public function forecast(Request $request, Goal $goal)
         $estimatedCompletionDate = null;
     }
 
+    $recommendedDailySaving = $remainingDays > 0
+        ? round($remainingAmount / $remainingDays, 2)
+        : 0;
+
+    $recommendedMonthlySaving = round(
+        $recommendedDailySaving * 30,
+        2
+    );
+
     return response()->json([
         'goal' => $goal->title,
-
         'forecast' => $status,
-
+        'message' => $message,
         'actual_progress' => round($actualProgress, 2),
-
         'expected_progress' => round($expectedProgress, 2),
-
         'remaining_amount' => round($remainingAmount, 2),
-
         'remaining_days' => $remainingDays,
-
         'estimated_completion_date' => $estimatedCompletionDate,
-
-        'recommended_monthly_saving' =>
-            $remainingDays > 0
-                ? round(($remainingAmount / $remainingDays) * 30, 2)
-                : 0,
+        'recommended_daily_saving' => $recommendedDailySaving,
+        'recommended_monthly_saving' => $recommendedMonthlySaving,
     ]);
 }
 }
