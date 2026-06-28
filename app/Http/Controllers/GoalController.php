@@ -450,5 +450,28 @@ public function archived(Request $request)
     return response()->json($goals);
 }
 
+public function restore(Request $request, Goal $goal)
+{
+    abort_unless(
+        $goal->user_id === $request->user()->id,
+        403
+    );
+
+    if (!$goal->is_archived) {
+        return response()->json([
+            'message' => 'Goal is already active.'
+        ], 400);
+    }
+
+    $goal->update([
+        'is_archived' => false,
+    ]);
+
+    return response()->json([
+        'message' => 'Goal restored successfully.',
+        'goal' => $goal,
+    ]);
+}
+
 }
 

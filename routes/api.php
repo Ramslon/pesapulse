@@ -128,5 +128,7 @@ Route::middleware('auth:sanctum')
 
     Route::get('/goals/archived', [GoalController::class, 'archived']);
 
+    Route::put('/goals/{goal}/restore', [GoalController::class, 'restore']);
+
  
 });
