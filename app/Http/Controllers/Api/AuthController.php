@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -83,6 +84,8 @@ class AuthController extends Controller
             'message' => 'Logged out successfully'
         ]);
     }
+
+    
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -140,4 +143,63 @@ public function getPreferences(Request $request)
         'notifications_enabled' => $request->user()->notifications_enabled,
     ]);
 }
+
+public function changePassword(Request $request)
+{
+    $validator = validator($request->all(), [
+        'current_password' => ['required'],
+        'new_password' => [
+            'required',
+            'confirmed',
+            Password::min(8)
+                ->mixedCase()
+                ->numbers()
+                ->symbols(),
+        ],
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validation failed.',
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    $user = $request->user();
+
+    if (!Hash::check($request->current_password, $user->password)) {
+        return response()->json([
+            'message' => 'Validation failed.',
+            'errors' => [
+                'current_password' => [
+                    'Current password is incorrect.'
+                ]
+            ]
+        ], 422);
+    }
+
+    if (Hash::check($request->new_password, $user->password)) {
+        return response()->json([
+            'message' => 'Validation failed.',
+            'errors' => [
+                'new_password' => [
+                    'New password cannot be the same as your current password.'
+                ]
+            ]
+        ], 422);
+    }
+
+    $user->update([
+        'password' => Hash::make($request->new_password),
+    ]);
+
+    // Log out all existing devices/sessions
+    $user->tokens()->delete();
+
+    return response()->json([
+        'message' => 'Password changed successfully. Please log in again.',
+    ]);
+}
+
+
 }

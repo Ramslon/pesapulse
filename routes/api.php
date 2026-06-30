@@ -100,6 +100,8 @@ Route::middleware('auth:sanctum')
 
     Route::get('/preferences', [AuthController::class, 'getPreferences']);
 
+    Route::put('/change-password', [AuthController::class, 'changePassword']);
+
     Route::post('/budget', [BudgetController::class, 'store']);
 
     Route::get('/financial-insights',[BudgetController::class, 'financialInsights']);
