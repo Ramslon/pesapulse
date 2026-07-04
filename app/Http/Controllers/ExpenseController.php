@@ -141,6 +141,39 @@ class ExpenseController extends Controller
         'categories' => $categories,
     ]);
 }
+
+public function dashboard(Request $request)
+{
+    $user = $request->user();
+
+    $recentExpenses = $user->expenses()
+        ->latest('expense_date')
+        ->latest('id')
+        ->take(3)
+        ->get();
+
+    return response()->json([
+
+        'summary' => [
+
+            'total_expenses' =>
+
+                $user->expenses()->sum('amount'),
+
+            'total_count' =>
+
+                $user->expenses()->count(),
+
+            'categories' =>
+
+                $user->expenses()
+                    ->distinct('category')
+                    ->count('category'),
+        ],
+
+        'recent_expenses' => $recentExpenses,
+    ]);
+}
         
     
 }

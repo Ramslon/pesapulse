@@ -91,6 +91,11 @@ Route::middleware('auth:sanctum')
         ]);
     });
 
+    Route::get('/dashboard', [
+    ExpenseController::class,
+    'dashboard'
+    ]);
+
     Route::apiResource(
         'expenses',
         ExpenseController::class
