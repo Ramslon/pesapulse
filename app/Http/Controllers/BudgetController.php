@@ -178,6 +178,26 @@ public function summary(Request $request)
     })
     ->values();
 
+    // DAILY SPENDING TREND
+    $dailySpending = [
+    'Mon' => 0,
+    'Tue' => 0,
+    'Wed' => 0,
+    'Thu' => 0,
+    'Fri' => 0,
+    'Sat' => 0,
+    'Sun' => 0,
+    ];
+
+    foreach ($expenses as $expense) {
+
+    $day = \Carbon\Carbon::parse($expense->expense_date)->format('D');
+
+    if (isset($dailySpending[$day])) {
+        $dailySpending[$day] += $expense->amount;
+    }
+    }
+
     // FINAL RESPONSE
     return response()->json([
         'budget' => $budgetAmount,
@@ -188,7 +208,8 @@ public function summary(Request $request)
         'recommendation' => $recommendation,
         'top_category' => $topCategory,
         'category_advice' => $categoryAdvice,
-        'category_breakdown' => $categoryBreakdown
+        'category_breakdown' => $categoryBreakdown,
+        'daily_spending' => $dailySpending,
     ]);
 }
 }
