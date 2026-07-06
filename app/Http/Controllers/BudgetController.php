@@ -230,6 +230,58 @@ public function summary(Request $request)
     ? round(($spent / $today) * $daysInMonth, 2)
     : 0;
 
+
+    // Financial Health Score (0-100)
+
+   $score = 100;
+
+// Budget usage impact
+   if ($percentage >= 100) {
+
+    $score -= 45;
+
+   }
+   elseif ($percentage >= 80) {
+
+    $score -= 20;
+
+   }
+
+// Remaining budget impact
+   if ($remaining <= 0) {
+
+    $score -= 20;
+
+    }
+
+// Large estimated overspending
+    if ($estimatedMonthEnd > $budgetAmount) {
+
+    $score -= 15;
+
+    }
+
+    $score = max(0, min(100, $score));
+
+    $healthLabel = 'Excellent';
+
+if ($score < 90) {
+    $healthLabel = 'Good';
+}
+
+if ($score < 70) {
+    $healthLabel = 'Fair';
+}
+
+if ($score < 50) {
+    $healthLabel = 'Poor';
+}
+
+if ($score < 30) {
+    $healthLabel = 'Critical';
+}
+   
+
     // FINAL RESPONSE
     return response()->json([
         'budget' => $budgetAmount,
@@ -250,6 +302,13 @@ public function summary(Request $request)
         'average_daily_spending' => $averageDaily,
 
         'estimated_month_end_spending' => $estimatedMonthEnd,
+
+        'financial_health_score' => $score,
+
+        'financial_health_label' => $healthLabel,
        ]);
+        
+
+
       }
     }
