@@ -168,6 +168,16 @@ public function summary(Request $request)
         }
     }
 
+    $categoryBreakdown = $expenses
+    ->groupBy('category')
+    ->map(function ($items, $category) {
+        return [
+            'category' => ucfirst($category),
+            'total' => round($items->sum('amount'), 2),
+        ];
+    })
+    ->values();
+
     // FINAL RESPONSE
     return response()->json([
         'budget' => $budgetAmount,
@@ -178,6 +188,7 @@ public function summary(Request $request)
         'recommendation' => $recommendation,
         'top_category' => $topCategory,
         'category_advice' => $categoryAdvice,
+        'category_breakdown' => $categoryBreakdown
     ]);
 }
 }
