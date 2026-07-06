@@ -198,6 +198,38 @@ public function summary(Request $request)
     }
     }
 
+    // Highest spending day
+    $highestDay = null;
+    $highestDayAmount = 0;
+
+    foreach ($dailySpending as $day => $amount) {
+
+    if ($amount > $highestDayAmount) {
+
+        $highestDayAmount = $amount;
+
+        $highestDay = $day;
+    }
+    }
+
+    $daysWithExpenses = $expenses
+    ->groupBy(function ($expense) {
+        return \Carbon\Carbon::parse($expense->expense_date)->toDateString();
+    })
+    ->count();
+
+    $averageDaily = $daysWithExpenses > 0
+    ? round($spent / $daysWithExpenses, 2)
+    : 0;
+
+    $today = now()->day;
+
+    $daysInMonth = now()->daysInMonth;
+
+    $estimatedMonthEnd = $today > 0
+    ? round(($spent / $today) * $daysInMonth, 2)
+    : 0;
+
     // FINAL RESPONSE
     return response()->json([
         'budget' => $budgetAmount,
@@ -210,6 +242,14 @@ public function summary(Request $request)
         'category_advice' => $categoryAdvice,
         'category_breakdown' => $categoryBreakdown,
         'daily_spending' => $dailySpending,
-    ]);
-}
-}
+        'highest_spending_day' => [
+        'day' => $highestDay,
+        'amount' => $highestDayAmount,
+           ],
+
+        'average_daily_spending' => $averageDaily,
+
+        'estimated_month_end_spending' => $estimatedMonthEnd,
+       ]);
+      }
+    }
