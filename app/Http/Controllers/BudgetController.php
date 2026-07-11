@@ -43,6 +43,18 @@ public function summary(Request $request)
         'remaining' => ($budget?->amount ?? 0) - $spent,
     ]);
 }
+
+public function destroy(Request $request)
+{
+    Budget::where('user_id', $request->user()->id)
+        ->where('month', now()->month)
+        ->where('year', now()->year)
+        ->delete();
+
+    return response()->json([
+        'message' => 'Budget deleted successfully'
+    ]);
+}
     
   public function financialInsights(Request $request)
 {
