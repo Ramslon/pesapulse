@@ -84,6 +84,7 @@ public function destroy(Request $request)
 
     // Budget status logic
     $status = 'healthy';
+    
 
     $recommendation = 'Your spending is under control.';
 
@@ -301,6 +302,7 @@ if ($score < 30) {
         'remaining' => $remaining,
         'usage_percentage' => $percentage,
         'status' => $status,
+        'budget_status' => $status,
         'recommendation' => $recommendation,
         'top_category' => $topCategory,
         'category_advice' => $categoryAdvice,
