@@ -415,7 +415,8 @@ public function archive(Request $request, Goal $goal)
     ]);
 
     return response()->json([
-        'message' => 'Goal archived successfully.',
+    'message' => 'Goal archived successfully.',
+    'goal' => $goal->fresh(),
     ]);
 }
 
@@ -442,7 +443,7 @@ public function archived(Request $request)
             'target_date' => $goal->target_date,
             'completed_percentage' => $percentage,
             'achievement' => 'Completed',
-            'archived' => true,
+            'is_archived' => true,
             'completed_at' => $goal->updated_at->toDateString(),
         ];
     });

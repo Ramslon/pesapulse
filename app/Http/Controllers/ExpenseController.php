@@ -151,7 +151,8 @@ public function dashboard(Request $request)
         ->latest('id')
         ->take(3)
         ->get();
-
+    
+        
     return response()->json([
 
         'summary' => [
