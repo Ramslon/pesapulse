@@ -9,7 +9,7 @@ use App\Models\Goal;
 
 class GoalController extends Controller
 {
-  public function store(Request $request)
+ public function store(Request $request)
 {
     $request->validate([
         'title' => 'required|string|max:255',
@@ -17,9 +17,31 @@ class GoalController extends Controller
         'target_date' => 'nullable|date',
     ]);
 
+    // Normalize title once
+    $title = ucwords(
+        strtolower(
+            trim(
+                preg_replace('/\s+/', ' ', $request->title)
+            )
+        )
+    );
+
+    // Prevent duplicate active goals
+    $existingGoal = Goal::where('user_id', $request->user()->id)
+        ->where('title', $title)
+        ->where('target_amount', $request->target_amount)
+        ->where('is_archived', false)
+        ->exists();
+
+    if ($existingGoal) {
+        return response()->json([
+            'message' => 'An active goal with the same title and target amount already exists.'
+        ], 422);
+    }
+
     $goal = Goal::create([
         'user_id' => $request->user()->id,
-        'title' => $request->title,
+        'title' => $title,
         'target_amount' => $request->target_amount,
         'saved_amount' => 0,
         'target_date' => $request->target_date,
@@ -27,7 +49,6 @@ class GoalController extends Controller
 
     return response()->json($goal, 201);
 }
-
 public function index(Request $request)
 {
     return response()->json(
