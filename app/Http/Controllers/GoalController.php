@@ -445,6 +445,7 @@ public function archived(Request $request)
             'achievement' => 'Completed',
             'is_archived' => true,
             'completed_at' => $goal->updated_at->toDateString(),
+            'updated_at' => $goal->updated_at,
         ];
     });
 
