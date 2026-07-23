@@ -151,11 +151,7 @@ public function updateProgress(Request $request, Goal $goal)
         ];
     }
 
-    $goal->completed_percentage = min($percentage, 100);
-
-    if ($percentage >= 100 && !$goal->completed_at) {
-    $goal->completed_at = now();
-    }
+    
 
     $goal->save();
 
