@@ -17,7 +17,7 @@ class GoalController extends Controller
         'target_date' => 'nullable|date',
     ]);
 
-    // Normalize title once
+    // Normalize title once and validation
     $title = ucwords(
         strtolower(
             trim(
