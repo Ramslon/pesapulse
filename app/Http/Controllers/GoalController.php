@@ -236,8 +236,12 @@ public function analytics(Request $request)
     ]);
 }
 
-public function insights(Goal $goal)
+public function insights(Request $request, $id)
 {
+    $goal = $request->user()
+        ->goals()
+        ->findOrFail($id);
+        
     $targetAmount = $goal->target_amount;
     $savedAmount = $goal->saved_amount;
 
@@ -311,8 +315,12 @@ if ($status === 'completed') {
     ]);
 }
 
-public function forecast(Request $request, Goal $goal)
+public function forecast(Request $request, $id)
 {
+    $goal = $request->user()
+        ->goals()
+        ->findOrFail($id);
+
     abort_unless(
         $goal->user_id === $request->user()->id,
         403
