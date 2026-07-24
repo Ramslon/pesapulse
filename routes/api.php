@@ -140,5 +140,8 @@ Route::middleware('auth:sanctum')
 
     Route::put('/goals/{goal}/restore', [GoalController::class, 'restore']);
 
+    Route::delete('/goals/{goal}', [GoalController::class, 'destroy']);
+
+
  
 });

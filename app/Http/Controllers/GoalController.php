@@ -151,7 +151,6 @@ public function updateProgress(Request $request, Goal $goal)
         ];
     }
 
-    
 
     $goal->save();
 
@@ -504,6 +503,21 @@ public function restore(Request $request, Goal $goal)
         'message' => 'Goal restored successfully.',
         'goal' => $goal,
     ]);
+}
+
+
+public function destroy(Request $request, Goal $goal)
+{
+    abort_unless(
+        $goal->user_id === $request->user()->id,
+        403
+    );
+
+    $goal->delete();
+
+    return response()->json([
+        'message' => 'Goal deleted successfully.'
+    ], 200);
 }
 
 }
