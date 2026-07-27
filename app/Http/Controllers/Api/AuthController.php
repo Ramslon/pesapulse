@@ -269,5 +269,62 @@ public function verifyOtp(Request $request)
     ]);
 }
 
+public function resetPassword(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'otp' => 'required|digits:6',
+        'password' => [
+            'required',
+            'confirmed',
+            Password::min(8)
+                ->mixedCase()
+                ->numbers()
+                ->symbols(),
+        ],
+    ]);
+
+    $record = PasswordResetOtp::where('email', $request->email)
+        ->where('otp', $request->otp)
+        ->first();
+
+    if (!$record) {
+        return response()->json([
+            'message' => 'Invalid OTP.'
+        ], 400);
+    }
+
+    if (now()->greaterThan($record->expires_at)) {
+
+        $record->delete();
+
+        return response()->json([
+            'message' => 'OTP has expired.'
+        ], 400);
+    }
+
+    $user = User::where('email', $request->email)->first();
+
+    if (!$user) {
+        return response()->json([
+            'message' => 'User not found.'
+        ], 404);
+    }
+
+    $user->update([
+        'password' => Hash::make($request->password),
+    ]);
+
+    // Delete OTP after successful reset
+    $record->delete();
+
+    // Log out every device
+    $user->tokens()->delete();
+
+    return response()->json([
+        'message' => 'Password reset successfully. Please log in again.',
+    ]);
+}
+
 
 }
