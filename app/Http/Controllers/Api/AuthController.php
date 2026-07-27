@@ -238,5 +238,36 @@ public function forgotPassword(Request $request)
     ]);
 }
 
+public function verifyOtp(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'otp' => 'required|digits:6',
+    ]);
+
+    $record = PasswordResetOtp::where('email', $request->email)
+        ->where('otp', $request->otp)
+        ->first();
+
+    if (!$record) {
+        return response()->json([
+            'message' => 'Invalid OTP.'
+        ], 400);
+    }
+
+    if ($record->expires_at->isPast()) {
+
+        $record->delete();
+
+        return response()->json([
+            'message' => 'OTP has expired.'
+        ], 400);
+    }
+
+    return response()->json([
+        'message' => 'OTP verified successfully.'
+    ]);
+}
+
 
 }

@@ -20,6 +20,7 @@ Route::post('/login', [
 ]);
 
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 
 Route::get('/env-check', function () {
     return [
