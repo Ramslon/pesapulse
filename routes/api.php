@@ -19,11 +19,7 @@ Route::post('/login', [
     'login'
 ]);
 
-Route::get('/test', function () {
-    return response()->json([
-        'message' => 'API works'
-    ]);
-});
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 Route::get('/env-check', function () {
     return [

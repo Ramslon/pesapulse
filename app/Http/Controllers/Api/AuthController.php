@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\PasswordResetOtp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -198,6 +202,39 @@ public function changePassword(Request $request)
 
     return response()->json([
         'message' => 'Password changed successfully. Please log in again.',
+    ]);
+}
+
+public function forgotPassword(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (!$user) {
+        return response()->json([
+            'message' => 'No account found with this email.'
+        ], 404);
+    }
+
+    // Delete any previous OTPs for this email
+    PasswordResetOtp::where('email', $request->email)->delete();
+
+    // Generate a 6-digit OTP
+    $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+    PasswordResetOtp::create([
+        'email' => $request->email,
+        'otp' => $otp,
+        'expires_at' => now()->addMinutes(10),
+    ]);
+
+    return response()->json([
+        'message' => 'OTP generated successfully.',
+        'otp' => $otp, // Development only
+        'expires_in' => 600,
     ]);
 }
 
