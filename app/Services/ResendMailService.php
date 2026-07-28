@@ -10,21 +10,25 @@ class ResendMailService
 
     public function __construct()
     {
-        dd(config('resend.api_key'));
+      
         $this->client = Resend::client(config('resend.api_key'));
     }
 
-    public function sendOtp(string $to, string $name, string $otp)
-    {
-        return $this->client->emails->send([
-            'from' => config('resend.from_name') . ' <' . config('resend.from') . '>',
-            'to' => [$to],
-            'subject' => 'PesaPulse • Password Reset Verification Code',
+   public function sendOtp(string $to, string $name, string $otp)
+{
+    try {
 
-            'html' => view('emails.otp', [
-                'name' => $name,
-                'otp' => $otp,
-            ])->render(),
+        return $this->client->emails->send([
+            'from' => 'PesaPulse <onboarding@resend.dev>',
+            'to' => [$to],
+            'subject' => 'Test Email',
+            'html' => '<h1>Hello from PesaPulse</h1>',
         ]);
+
+    } catch (\Throwable $e) {
+
+        dd($e->getMessage());
+
     }
+}
 }
