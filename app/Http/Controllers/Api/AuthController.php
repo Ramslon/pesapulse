@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\PasswordResetOtp;
+use App\Mail\OtpMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -231,11 +232,22 @@ public function forgotPassword(Request $request)
         'expires_at' => now()->addMinutes(10),
     ]);
 
+    try {
+
+    Mail::to($request->email)->send(new OtpMail($otp));
+
     return response()->json([
-        'message' => 'OTP generated successfully.',
-        'otp' => $otp, // Development only
-        'expires_in' => 600,
+        'message' => 'OTP sent successfully.',
     ]);
+
+} catch (\Exception $e) {
+
+    return response()->json([
+        'message' => 'Unable to send OTP email.',
+        'error' => $e->getMessage(),
+    ], 500);
+
+}
 }
 
 public function verifyOtp(Request $request)
