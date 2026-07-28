@@ -4,24 +4,30 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class OtpMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $otp;
-    public string $name;
+    public function __construct(
+        public string $otp,
+        public string $name,
+    ) {}
 
-    public function __construct(string $otp, string $name)
+    public function envelope(): Envelope
     {
-        $this->otp = $otp;
-        $this->name = $name;
+        return new Envelope(
+            subject: 'Your PesaPulse Password Reset OTP',
+        );
     }
 
-    public function build()
+    public function content(): Content
     {
-        return $this->subject('Your PesaPulse Password Reset OTP')
-            ->view('emails.otp');
+        return new Content(
+            view: 'emails.otp',
+        );
     }
 }

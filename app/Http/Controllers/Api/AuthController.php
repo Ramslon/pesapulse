@@ -257,6 +257,7 @@ public function forgotPassword(Request $request)
 
     return response()->json([
         'message' => 'Unable to send OTP email.',
+        'error' => $e->getMessage(),
     ], 500);
 }
 }
