@@ -248,11 +248,7 @@ public function forgotPassword(Request $request)
 
 } catch (\Exception $e) {
 
-    Log::error('Resend OTP failed', [
-        'email' => $request->email,
-        'error' => $e->getMessage(),
-        'trace' => $e->getTraceAsString(),
-    ]);
+   Log::error($e);
 
     return response()->json([
         'message' => 'Unable to send OTP email.',
