@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\PasswordResetOtp;
 use App\Mail\OtpMail;
-use App\Services\ResendMailService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -236,10 +235,11 @@ public function forgotPassword(Request $request)
 
     try {
 
-    app(ResendMailService::class)->sendOtp(
-        $request->email,
+    Mail::to($request->email)->send(
+    new OtpMail(
+        $otp,
         $user->name,
-        $otp
+    )
     );
 
     return response()->json([
