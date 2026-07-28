@@ -251,12 +251,13 @@ public function forgotPassword(Request $request)
     Log::error('Resend OTP failed', [
         'email' => $request->email,
         'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString(),
     ]);
 
     return response()->json([
         'message' => 'Unable to send OTP email.',
+        'error' => $e->getMessage(), // TEMPORARY
     ], 500);
-
 }
 }
 
