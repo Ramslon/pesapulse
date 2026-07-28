@@ -23,7 +23,7 @@
         🔐 Password Reset
     </h2>
 
-    <p>Hello,</p>
+    <p>Hello {{ $name }},</p>
 
     <p>
         We received a request to reset your

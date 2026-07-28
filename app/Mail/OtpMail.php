@@ -11,10 +11,12 @@ class OtpMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $otp;
+    public string $name;
 
-    public function __construct(string $otp)
+    public function __construct(string $otp, string $name)
     {
         $this->otp = $otp;
+        $this->name = $name;
     }
 
     public function build()

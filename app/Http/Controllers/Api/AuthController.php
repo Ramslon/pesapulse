@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\PasswordResetOtp;
 use App\Mail\OtpMail;
+use App\Services\ResendMailService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -234,7 +236,11 @@ public function forgotPassword(Request $request)
 
     try {
 
-    Mail::to($request->email)->send(new OtpMail($otp));
+    app(ResendMailService::class)->sendOtp(
+        $request->email,
+        $user->name,
+        $otp
+    );
 
     return response()->json([
         'message' => 'OTP sent successfully.',
@@ -242,9 +248,13 @@ public function forgotPassword(Request $request)
 
 } catch (\Exception $e) {
 
+    Log::error('Resend OTP failed', [
+        'email' => $request->email,
+        'error' => $e->getMessage(),
+    ]);
+
     return response()->json([
         'message' => 'Unable to send OTP email.',
-        'error' => $e->getMessage(),
     ], 500);
 
 }
