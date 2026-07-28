@@ -20,11 +20,19 @@ Route::get('/practice', function () {
 
 
 Route::get('/mail-test', function () {
-    Mail::raw('This is a Gmail SMTP test from PesaPulse.', function ($message) {
-        $message->to('ramsonlonayo@gmail.com')
-                ->subject('SMTP Test');
-    });
+    try {
+        Mail::raw('Brevo SMTP Test', function ($message) {
+            $message->to('ramsonlonayo@gmail.com')
+                    ->subject('Brevo Test');
+        });
 
-    return 'Mail sent!';
+        return 'Mail sent!';
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ], 500);
+    }
 });
 

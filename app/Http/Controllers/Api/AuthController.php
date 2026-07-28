@@ -275,7 +275,7 @@ public function verifyOtp(Request $request)
 
     if (!$record) {
         return response()->json([
-            'message' => 'Invalid OTP.'
+            'message' => 'The verification code you entered is incorrect. Please try again.'
         ], 400);
     }
 
@@ -284,7 +284,7 @@ public function verifyOtp(Request $request)
         $record->delete();
 
         return response()->json([
-            'message' => 'OTP has expired.'
+            'message' => 'Your verification code has expired. Please request a new one.'
         ], 400);
     }
 
