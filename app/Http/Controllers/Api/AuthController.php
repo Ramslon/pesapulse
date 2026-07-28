@@ -235,12 +235,10 @@ public function forgotPassword(Request $request)
 
     try {
 
-    Mail::to($request->email)->send(
-    new OtpMail(
-        $otp,
-        $user->name,
-    )
-    );
+    Mail::raw("Your OTP is: {$otp}", function ($message) use ($request) {
+    $message->to($request->email)
+            ->subject('PesaPulse OTP Test');
+    });
 
     return response()->json([
         'message' => 'OTP sent successfully.',
@@ -248,7 +246,12 @@ public function forgotPassword(Request $request)
 
 } catch (\Exception $e) {
 
-   Log::error($e);
+   Log::error('OTP Mail Error', [
+    'message' => $e->getMessage(),
+    'file' => $e->getFile(),
+    'line' => $e->getLine(),
+    'trace' => $e->getTraceAsString(),
+]);
 
     return response()->json([
         'message' => 'Unable to send OTP email.',
