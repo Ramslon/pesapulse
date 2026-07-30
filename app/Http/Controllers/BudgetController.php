@@ -64,10 +64,10 @@ public function destroy(Request $request)
     $budget = $user->budgets()->latest()->first();
 
     if (!$budget) {
-        return response()->json([
-            'message' => 'No budget found'
-        ]);
-    }
+    return response()->json([
+        'message' => 'No budget found'
+    ], 404);
+}
 
     // Efficient expense query (only needed columns)
     $expenses = $user->expenses()->get(['category', 'amount']);
