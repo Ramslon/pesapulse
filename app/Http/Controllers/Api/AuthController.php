@@ -5,15 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\PasswordResetOtp;
-use App\Mail\OtpMail;
-use Illuminate\Support\Facades\Log;
+use App\Services\BrevoMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -208,6 +203,12 @@ public function changePassword(Request $request)
     ]);
 }
 
+private BrevoMailService $mailService;
+public function __construct(BrevoMailService $mailService)
+{
+    $this->mailService = $mailService;
+}
+
 public function forgotPassword(Request $request)
 {
     $request->validate([
@@ -234,77 +235,25 @@ public function forgotPassword(Request $request)
         'expires_at' => now()->addMinutes(10),
     ]);
 
-    try {
+   $sent = $this->mailService->sendOtpEmail(
+    $request->email,
+    $user->name,
+    $otp
+);
 
-        $response = Http::withHeaders([
-            'api-key'      => env('BREVO_API_KEY'),
-            'accept'       => 'application/json',
-            'content-type' => 'application/json',
-        ])->post('https://api.brevo.com/v3/smtp/email', [
+if (!$sent) {
+    return response()->json([
+        'message' => 'Unable to send OTP email.'
+    ], 500);
 
-            'sender' => [
-                'name'  => 'PesaPulse',
-                'email' => 'ramsonlonayo@gmail.com',
-            ],
+}
 
-            'to' => [
-                [
-                    'email' => $request->email,
-                    'name'  => $user->name,
-                ]
-            ],
-
-            'subject' => 'Your PesaPulse Password Reset Code',
-
-            'htmlContent' => "
-                <h2>Hello {$user->name},</h2>
-
-                <p>Your password reset verification code is:</p>
-
-                <h1 style='letter-spacing:5px;font-size:42px;color:#16a34a;'>
-                    {$otp}
-                </h1>
-
-                <p>This code expires in <strong>10 minutes</strong>.</p>
-
-                <p>If you didn't request this, you can safely ignore this email.</p>
-
-                <hr>
-
-                <small>PesaPulse Security Team</small>
-            ",
-        ]);
-
-        if (!$response->successful()) {
-
-            Log::error('Brevo API Error', [
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
-
-            return response()->json([
-                'message' => 'Unable to send OTP email.',
-            ], 500);
-        }
-
-        return response()->json([
+     return response()->json([
             'message' => 'OTP sent successfully.',
         ]);
 
-    } catch (\Exception $e) {
-
-        Log::error('Brevo Exception', [
-            'message' => $e->getMessage(),
-            'file'    => $e->getFile(),
-            'line'    => $e->getLine(),
-        ]);
-
-        return response()->json([
-            'message' => 'Unable to send OTP email.',
-            'error'   => $e->getMessage(),
-        ], 500);
-    }
 }
+
 
 public function verifyOtp(Request $request)
 {

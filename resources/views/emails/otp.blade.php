@@ -3,71 +3,73 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>PesaPulse OTP</title>
+    <title>Password Reset OTP</title>
 </head>
 
-<body style="background:#f4f6f9;
-             font-family:Arial,sans-serif;
-             padding:30px;">
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif;">
 
-<div style="
-    max-width:600px;
-    margin:auto;
-    background:#ffffff;
-    border-radius:16px;
-    padding:40px;
-    box-shadow:0 4px 18px rgba(0,0,0,.08);
-">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;background:#f5f7fa;">
+        <tr>
+            <td align="center">
 
-    <h2 style="color:#2E7D32;">
-        🔐 Password Reset
-    </h2>
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background:#ffffff;border-radius:12px;overflow:hidden;">
 
-    <p>Hello {{ $name }},</p>
+                    <tr>
+                        <td
+                            style="background:#16a34a;padding:24px;text-align:center;color:white;font-size:28px;font-weight:bold;">
+                            PesaPulse
+                        </td>
+                    </tr>
 
-    <p>
-        We received a request to reset your
-        <strong>PesaPulse</strong> password.
-    </p>
+                    <tr>
+                        <td style="padding:40px;">
 
-    <p>
-        Use the OTP below to continue.
-    </p>
+                            <h2>Hello {{ $name }},</h2>
 
-    <div
-        style="
-        text-align:center;
-        margin:35px 0;
-        letter-spacing:8px;
-        font-size:34px;
-        font-weight:bold;
-        color:#2E7D32;
-    ">
-        {{ $otp }}
-    </div>
+                            <p>
+                                We received a request to reset your password.
+                            </p>
 
-    <p>
-        This OTP will expire in
-        <strong>10 minutes</strong>.
-    </p>
+                            <p>
+                                Use the verification code below:
+                            </p>
 
-    <p>
-        If you didn't request a password reset,
-        you can safely ignore this email.
-    </p>
+                            <div style="
+                                margin:30px 0;
+                                text-align:center;
+                                font-size:42px;
+                                letter-spacing:8px;
+                                font-weight:bold;
+                                color:#16a34a;
+                            ">
+                                {{ $otp }}
+                            </div>
 
-    <hr>
+                            <p>
+                                This verification code expires in
+                                <strong>10 minutes</strong>.
+                            </p>
 
-    <p
-        style="
-        color:#777;
-        font-size:13px;
-        margin-top:20px;
-    ">
-        PesaPulse Team
-    </p>
+                            <p>
+                                If you didn't request a password reset,
+                                simply ignore this email.
+                            </p>
 
-</div>
+                            <hr>
+
+                            <p style="font-size:13px;color:#777;">
+                                PesaPulse Security Team
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
 
 </body>
 
