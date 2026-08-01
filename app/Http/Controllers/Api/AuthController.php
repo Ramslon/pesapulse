@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -221,10 +222,10 @@ public function forgotPassword(Request $request)
         ], 404);
     }
 
-    // Delete any previous OTPs for this email
+    // Delete previous OTPs
     PasswordResetOtp::where('email', $request->email)->delete();
 
-    // Generate a 6-digit OTP
+    // Generate OTP
     $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
     PasswordResetOtp::create([
@@ -235,31 +236,74 @@ public function forgotPassword(Request $request)
 
     try {
 
-    Mail::to($request->email)->send(
-        new OtpMail(
-            $otp,
-            $user->name,
-        )
-    );
+        $response = Http::withHeaders([
+            'api-key'      => env('BREVO_API_KEY'),
+            'accept'       => 'application/json',
+            'content-type' => 'application/json',
+        ])->post('https://api.brevo.com/v3/smtp/email', [
 
-    return response()->json([
-        'message' => 'OTP sent successfully.',
-    ]);
+            'sender' => [
+                'name'  => 'PesaPulse',
+                'email' => 'ramsonlonayo@gmail.com',
+            ],
 
-} catch (\Exception $e) {
+            'to' => [
+                [
+                    'email' => $request->email,
+                    'name'  => $user->name,
+                ]
+            ],
 
-    Log::error('OTP Mail Error', [
-        'message' => $e->getMessage(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine(),
-        'trace' => $e->getTraceAsString(),
-    ]);
+            'subject' => 'Your PesaPulse Password Reset Code',
 
-    return response()->json([
-        'message' => 'Unable to send OTP email.',
-        'error' => $e->getMessage(),
-    ], 500);
-}
+            'htmlContent' => "
+                <h2>Hello {$user->name},</h2>
+
+                <p>Your password reset verification code is:</p>
+
+                <h1 style='letter-spacing:5px;font-size:42px;color:#16a34a;'>
+                    {$otp}
+                </h1>
+
+                <p>This code expires in <strong>10 minutes</strong>.</p>
+
+                <p>If you didn't request this, you can safely ignore this email.</p>
+
+                <hr>
+
+                <small>PesaPulse Security Team</small>
+            ",
+        ]);
+
+        if (!$response->successful()) {
+
+            Log::error('Brevo API Error', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+
+            return response()->json([
+                'message' => 'Unable to send OTP email.',
+            ], 500);
+        }
+
+        return response()->json([
+            'message' => 'OTP sent successfully.',
+        ]);
+
+    } catch (\Exception $e) {
+
+        Log::error('Brevo Exception', [
+            'message' => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
+        ]);
+
+        return response()->json([
+            'message' => 'Unable to send OTP email.',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
 }
 
 public function verifyOtp(Request $request)
