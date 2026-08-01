@@ -33,12 +33,18 @@ public function summary(Request $request)
         ->where('year', now()->year)
         ->first();
 
+    $budgetCount = $user->budgets()
+        ->where('month', now()->month)
+        ->where('year', now()->year)
+        ->count();
+
     $spent = $user->expenses()
         ->whereMonth('created_at', now()->month)
         ->sum('amount');
 
     return response()->json([
         'budget' => $budget?->amount ?? 0,
+        'budget_count' => $budgetCount,
         'spent' => $spent,
         'remaining' => ($budget?->amount ?? 0) - $spent,
     ]);
