@@ -8,6 +8,7 @@ use App\Models\PasswordResetOtp;
 use App\Services\BrevoMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Services\AccountDeletionService;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -204,9 +205,35 @@ public function changePassword(Request $request)
 }
 
 private BrevoMailService $mailService;
-public function __construct(BrevoMailService $mailService)
-{
+private AccountDeletionService $accountDeletionService;
+
+public function __construct(
+    BrevoMailService $mailService,
+    AccountDeletionService $accountDeletionService
+) {
     $this->mailService = $mailService;
+    $this->accountDeletionService = $accountDeletionService;
+}
+
+public function deleteAccount(Request $request)
+{
+    $request->validate([
+        'password' => 'required',
+    ]);
+
+    $user = $request->user();
+
+    if (!Hash::check($request->password, $user->password)) {
+        return response()->json([
+            'message' => 'Incorrect password.'
+        ], 422);
+    }
+
+    $this->accountDeletionService->delete($user);
+
+    return response()->json([
+        'message' => 'Account deleted successfully.'
+    ]);
 }
 
 public function forgotPassword(Request $request)

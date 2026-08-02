@@ -32,7 +32,7 @@ class User extends Authenticatable
         'weekly_summary',
 
         'dark_mode',
-        'notifications_enabled ',
+        'notifications_enabled',
     ];
 
     /**

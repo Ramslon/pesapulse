@@ -47,10 +47,9 @@ Route::middleware('auth:sanctum')
     ]);
 
 
-    Route::post('/logout', [
-        AuthController::class,
-        'logout'
-    ]);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::delete('/delete-account', [AuthController::class, 'deleteAccount']);
 
     Route::get('/expenses/search', [
         ExpenseController::class,
