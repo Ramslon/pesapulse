@@ -52,7 +52,7 @@ class AuthController extends Controller
             'email',
             $request->email
         )->first();
-
+       
         if (
             !$user ||
             !Hash::check(
