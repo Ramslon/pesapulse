@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\Api\GuestMigrationController;
 
 Route::post('/register', [
     AuthController::class,
@@ -139,6 +140,9 @@ Route::middleware('auth:sanctum')
 
     Route::delete('/goals/{goal}', [GoalController::class, 'destroy']);
 
-
+     Route::post('/guest/migrate', [
+        GuestMigrationController::class,
+        'migrate',
+    ]);
  
 });

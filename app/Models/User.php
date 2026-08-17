@@ -9,7 +9,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Expense;
-
+use App\Models\Budget;
+use App\Models\Goal;
 class User extends Authenticatable
 {
 
