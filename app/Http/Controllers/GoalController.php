@@ -193,20 +193,19 @@ public function upcomingDeadlines(Request $request)
 
     foreach ($goals as $goal) {
 
-        $daysRemaining = ceil(now()->diffInDays(
-            $goal->target_date,
-            false
-          )
-        );
+       $daysRemaining = now()->startOfDay()->diffInDays(
+       $goal->target_date->startOfDay(),
+       false
+     );
 
-        if ($daysRemaining <= 7 && $daysRemaining >= 0) {
-            $alerts[] = [
-                'goal_id' => $goal->id,
-                'title' => $goal->title,
-                'days_remaining' => $daysRemaining,
-                'target_date' => $goal->target_date,
-            ];
-        }
+    if ($daysRemaining <= 3 && $daysRemaining >= 0) {
+    $alerts[] = [
+        'goal_id' => $goal->id,
+        'title' => $goal->title,
+        'days_remaining' => $daysRemaining,
+        'target_date' => $goal->target_date,
+    ];
+     }
     }
 
     return response()->json($alerts);
