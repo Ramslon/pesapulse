@@ -18,9 +18,14 @@ Route::middleware('throttle:auth')->group(function () {
 
 });
 
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
+    ->middleware('throttle:password-forgot');
+
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])
+    ->middleware('throttle:password-verify');
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('throttle:password-reset');
 
 Route::get('/health', function () {
     return response()->json([
