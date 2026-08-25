@@ -46,10 +46,10 @@ class AppServiceProvider extends ServiceProvider
             );
 
             return [
-                Limit::perMinute(20)
+                Limit::perMinute(3)
                     ->by('ip:' . $request->ip()),
 
-                Limit::perMinute(10)
+                Limit::perMinute(2)
                     ->by('email:' . ($email ?: 'unknown'))
                     ->response(function (Request $request, array $headers) {
                         return response()->json([
