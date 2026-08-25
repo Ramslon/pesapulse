@@ -10,28 +10,25 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\Api\GuestMigrationController;
 
-Route::post('/register', [
-    AuthController::class,
-    'register'
-]);
+Route::middleware('throttle:auth')->group(function () {
 
-Route::post('/login', [
-    AuthController::class,
-    'login'
-]);
+    Route::post('/register', [AuthController::class, 'register']);
+
+    Route::post('/login', [AuthController::class, 'login']);
+
+});
 
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-Route::get('/env-check', function () {
-    return [
-        'host' => env('DB_HOST'),
-        'port' => env('DB_PORT'),
-    ];
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+    ]);
 });
 
-Route::middleware('auth:sanctum')
+Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
 
     Route::get('/user',
