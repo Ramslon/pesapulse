@@ -250,35 +250,40 @@ public function forgotPassword(Request $request)
         ], 404);
     }
 
-    // Delete previous OTPs
     PasswordResetOtp::where('email', $request->email)->delete();
 
-    // Generate OTP
-    $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $otp = str_pad(
+        random_int(0, 999999),
+        6,
+        '0',
+        STR_PAD_LEFT
+    );
+
+    $expiresAt = now()->addMinutes(10);
 
     PasswordResetOtp::create([
         'email' => $request->email,
         'otp' => $otp,
-        'expires_at' => now()->addMinutes(10),
+        'expires_at' => $expiresAt,
     ]);
 
-   $sent = $this->mailService->sendOtpEmail(
-    $request->email,
-    $user->name,
-    $otp
-);
+    $sent = $this->mailService->sendOtpEmail(
+        $request->email,
+        $user->name,
+        $otp
+    );
 
-if (!$sent) {
+    if (!$sent) {
+        return response()->json([
+            'message' => 'Unable to send OTP email.'
+        ], 500);
+    }
+
     return response()->json([
-        'message' => 'Unable to send OTP email.'
-    ], 500);
-
-}
-
-     return response()->json([
-            'message' => 'OTP sent successfully.',
-        ]);
-
+        'message' => 'OTP sent successfully.',
+        'expires_in' => now()->diffInSeconds($expiresAt),
+        'resend_after' => 60,
+    ]);
 }
 
 

@@ -63,99 +63,123 @@ class AppServiceProvider extends ServiceProvider
         });
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Forgot Password Rate Limiter
-        |--------------------------------------------------------------------------
-        */
+       /*
+|--------------------------------------------------------------------------
+| Forgot Password Rate Limiter
+|--------------------------------------------------------------------------
+*/
 
-        RateLimiter::for('password-forgot', function (Request $request) {
-            $email = strtolower(
-                trim($request->input('email', ''))
-            );
+RateLimiter::for('password-forgot', function (Request $request) {
+    $email = strtolower(
+        trim($request->input('email', ''))
+    );
 
-            $response = function (Request $request, array $headers) {
-                return response()->json([
-                    'message' =>
-                        'Too many password reset requests. Please try again later.',
-                ], 429, $headers);
-            };
+    $response = function (Request $request, array $headers) {
+        return response()->json([
+            'message' =>
+                'Too many password reset requests. Please try again later.',
 
-            return [
-                // 5 forgot-password requests per IP per minute
-                Limit::perMinute(5)
-                    ->by('ip:' . $request->ip())
-                    ->response($response),
+            'remaining' => isset($headers['X-RateLimit-Remaining'])
+                ? (int) $headers['X-RateLimit-Remaining']
+                : 0,
 
-                // 3 forgot-password requests per email per minute
-                Limit::perMinute(3)
-                    ->by('email:' . ($email ?: 'unknown'))
-                    ->response($response),
-            ];
-        });
+            'retry_after' => isset($headers['Retry-After'])
+                ? (int) $headers['Retry-After']
+                : null,
+        ], 429, $headers);
+    };
 
+    return [
+        // 5 forgot-password requests per IP per minute
+        Limit::perMinute(5)
+            ->by('ip:' . $request->ip())
+            ->response($response),
 
-        /*
-        |--------------------------------------------------------------------------
-        | OTP Verification Rate Limiter
-        |--------------------------------------------------------------------------
-        */
-
-        RateLimiter::for('password-verify', function (Request $request) {
-            $email = strtolower(
-                trim($request->input('email', ''))
-            );
-
-            $response = function (Request $request, array $headers) {
-                return response()->json([
-                    'message' =>
-                        'Too many OTP verification attempts. Please try again later.',
-                ], 429, $headers);
-            };
-
-            return [
-                // 10 OTP verification attempts per IP per minute
-                Limit::perMinute(10)
-                    ->by('ip:' . $request->ip())
-                    ->response($response),
-
-                // 5 OTP verification attempts per email per minute
-                Limit::perMinute(5)
-                    ->by('email:' . ($email ?: 'unknown'))
-                    ->response($response),
-            ];
-        });
+        // 3 forgot-password requests per email per minute
+        Limit::perMinute(3)
+            ->by('email:' . ($email ?: 'unknown'))
+            ->response($response),
+    ];
+});
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Password Reset Rate Limiter
-        |--------------------------------------------------------------------------
-        */
+/*
+|--------------------------------------------------------------------------
+| OTP Verification Rate Limiter
+|--------------------------------------------------------------------------
+*/
 
-        RateLimiter::for('password-reset', function (Request $request) {
-            $email = strtolower(
-                trim($request->input('email', ''))
-            );
+RateLimiter::for('password-verify', function (Request $request) {
+    $email = strtolower(
+        trim($request->input('email', ''))
+    );
 
-            $response = function (Request $request, array $headers) {
-                return response()->json([
-                    'message' =>
-                        'Too many password reset attempts. Please try again later.',
-                ], 429, $headers);
-            };
+    $response = function (Request $request, array $headers) {
+        return response()->json([
+            'message' =>
+                'Too many OTP verification attempts. Please try again later.',
 
-            return [
-                // 5 password reset attempts per IP per minute
-                Limit::perMinute(5)
-                    ->by('ip:' . $request->ip())
-                    ->response($response),
+            'remaining' => isset($headers['X-RateLimit-Remaining'])
+                ? (int) $headers['X-RateLimit-Remaining']
+                : 0,
 
-                // 3 password reset attempts per email per minute
-                Limit::perMinute(3)
-                    ->by('email:' . ($email ?: 'unknown'))
-                    ->response($response),
-            ];
-        });
+            'retry_after' => isset($headers['Retry-After'])
+                ? (int) $headers['Retry-After']
+                : null,
+        ], 429, $headers);
+    };
+
+    return [
+        // 10 OTP verification attempts per IP per minute
+        Limit::perMinute(10)
+            ->by('ip:' . $request->ip())
+            ->response($response),
+
+        // 5 OTP verification attempts per email per minute
+        Limit::perMinute(5)
+            ->by('email:' . ($email ?: 'unknown'))
+            ->response($response),
+    ];
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Password Reset Rate Limiter
+|--------------------------------------------------------------------------
+*/
+
+RateLimiter::for('password-reset', function (Request $request) {
+    $email = strtolower(
+        trim($request->input('email', ''))
+    );
+
+    $response = function (Request $request, array $headers) {
+        return response()->json([
+            'message' =>
+                'Too many password reset attempts. Please try again later.',
+
+            'remaining' => isset($headers['X-RateLimit-Remaining'])
+                ? (int) $headers['X-RateLimit-Remaining']
+                : 0,
+
+            'retry_after' => isset($headers['Retry-After'])
+                ? (int) $headers['Retry-After']
+                : null,
+        ], 429, $headers);
+    };
+
+    return [
+        // 5 password reset attempts per IP per minute
+        Limit::perMinute(5)
+            ->by('ip:' . $request->ip())
+            ->response($response),
+
+        // 3 password reset attempts per email per minute
+        Limit::perMinute(3)
+            ->by('email:' . ($email ?: 'unknown'))
+            ->response($response),
+    ];
+    });
     }
 }
