@@ -45,24 +45,25 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     Route::get('/profile', [AuthController::class, 'getProfile']);
 
     Route::put('/profile', [
-        AuthController::class,
-        'updateProfile'
-    ]);
+    AuthController::class,
+    'updateProfile'
+    ])->middleware('throttle:write');
 
 
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::delete('/delete-account', [AuthController::class, 'deleteAccount']);
+    Route::delete('/delete-account', [AuthController::class, 'deleteAccount'])  
+      ->middleware('throttle:sensitive');
 
     Route::get('/expenses/search', [
-        ExpenseController::class,
-        'search'
-    ]);
+    ExpenseController::class,
+    'search'
+    ])->middleware('throttle:expensive');
 
     Route::get('/analytics', [
-        ExpenseController::class,
-        'analytics'
-    ]);
+    ExpenseController::class,
+    'analytics'
+    ])->middleware('throttle:expensive');
 
     Route::get(
         '/dashboard-summary',
@@ -101,17 +102,22 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
         ExpenseController::class
     );
 
-    Route::put('/preferences', [AuthController::class, 'updatePreferences']);
+    Route::put('/preferences', [AuthController::class, 'updatePreferences'])
+    ->middleware('throttle:write');
 
     Route::get('/preferences', [AuthController::class, 'getPreferences']);
 
-    Route::put('/change-password', [AuthController::class, 'changePassword']);
+    Route::put('/change-password', [AuthController::class, 'changePassword'])  
+      ->middleware('throttle:sensitive');
 
-    Route::post('/budget', [BudgetController::class, 'store']);
+    Route::post('/budget', [BudgetController::class, 'store'])
+    ->middleware('throttle:write');
 
-    Route::delete('/budget', [BudgetController::class, 'destroy']);
+    Route::delete('/budget', [BudgetController::class, 'destroy'])
+    ->middleware('throttle:write');
 
-    Route::get('/financial-insights',[BudgetController::class, 'financialInsights']);
+    Route::get('/financial-insights', [BudgetController::class,'financialInsights'])
+      ->middleware('throttle:expensive');
 
     Route::get('/budget-summary', [BudgetController::class, 'summary']);
 
@@ -122,15 +128,18 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
 
     Route::get( '/goals/upcoming-deadlines', [GoalController::class, 'upcomingDeadlines']);
 
-    Route::get('/goals/analytics', [GoalController::class, 'analytics']);
+    Route::get('/goals/analytics', [GoalController::class, 'analytics'])
+      ->middleware('throttle:expensive');
 
     Route::get('/goals/{goal}/progress', [GoalController::class, 'progress']);
 
     Route::put('/goals/{goal}/progress', [GoalController::class, 'updateProgress']);
 
-    Route::get('/goals/{goal}/insights', [GoalController::class, 'insights']);
+    Route::get('/goals/{goal}/insights', [GoalController::class, 'insights']) 
+      ->middleware('throttle:expensive');
 
-    Route::get('/goals/{goal}/forecast', [GoalController::class, 'forecast']);
+    Route::get('/goals/{goal}/forecast', [GoalController::class, 'forecast'])
+      ->middleware('throttle:expensive');
 
     Route::put('/goals/{goal}', [GoalController::class, 'update']);
 
@@ -142,9 +151,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
 
     Route::delete('/goals/{goal}', [GoalController::class, 'destroy']);
 
-     Route::post('/guest/migrate', [
-        GuestMigrationController::class,
-        'migrate',
-    ]);
- 
+    Route::post('/guest/migrate', [
+    GuestMigrationController::class,
+    'migrate',
+    ])->middleware('throttle:write');
 });

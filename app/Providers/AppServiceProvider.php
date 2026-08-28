@@ -63,6 +63,53 @@ class AppServiceProvider extends ServiceProvider
         });
 
 
+       
+
+/*
+|--------------------------------------------------------------------------
+| Write API Rate Limiter
+|--------------------------------------------------------------------------
+*/
+
+RateLimiter::for('write', function (Request $request) {
+    return Limit::perMinute(30)
+        ->by(
+            $request->user()?->id
+            ?? $request->ip()
+        );
+});
+
+
+ /*
+|--------------------------------------------------------------------------
+| Expensive API Rate Limiter
+|--------------------------------------------------------------------------
+*/
+
+RateLimiter::for('expensive', function (Request $request) {
+    return Limit::perMinute(15)
+        ->by(
+            $request->user()?->id
+            ?? $request->ip()
+        );
+});
+
+ /*
+|--------------------------------------------------------------------------
+| Sensitive Account Rate Limiter
+|--------------------------------------------------------------------------
+*/
+
+    RateLimiter::for('sensitive', function (Request $request) {
+       return Limit::perMinute(5)
+        ->by(
+            $request->user()?->id
+            ?? $request->ip()
+        );
+        });
+
+        
+
        /*
 |--------------------------------------------------------------------------
 | Forgot Password Rate Limiter
