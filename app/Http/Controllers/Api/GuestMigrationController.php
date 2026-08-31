@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -11,11 +12,187 @@ class GuestMigrationController extends Controller
     public function migrate(Request $request)
     {
         $validated = $request->validate([
-            'expenses' => ['nullable', 'array'],
-            'goals' => ['nullable', 'array'],
-            'budgets' => ['nullable', 'array'],
-            'settings' => ['nullable', 'array'],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Expenses
+            |--------------------------------------------------------------------------
+            */
+
+            'expenses' => [
+                'nullable',
+                'array',
+                'max:500',
+            ],
+
+            'expenses.*' => [
+                'required',
+                'array',
+            ],
+
+            'expenses.*.client_id' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'expenses.*.title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'expenses.*.amount' => [
+                'required',
+                'numeric',
+                'min:0.01',
+                'max:999999999.99',
+            ],
+
+            'expenses.*.category' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'expenses.*.expense_date' => [
+                'required',
+                'date',
+            ],
+
+            'expenses.*.description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Goals
+            |--------------------------------------------------------------------------
+            */
+
+            'goals' => [
+                'nullable',
+                'array',
+                'max:100',
+            ],
+
+            'goals.*' => [
+                'required',
+                'array',
+            ],
+
+            'goals.*.client_id' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'goals.*.title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'goals.*.target_amount' => [
+                'required',
+                'numeric',
+                'min:0.01',
+                'max:999999999.99',
+            ],
+
+            'goals.*.saved_amount' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:999999999.99',
+            ],
+
+            'goals.*.target_date' => [
+                'nullable',
+                'date',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Budgets
+            |--------------------------------------------------------------------------
+            */
+
+            'budgets' => [
+                'nullable',
+                'array',
+                'max:100',
+            ],
+
+            'budgets.*' => [
+                'required',
+                'array',
+            ],
+
+            'budgets.*.client_id' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'budgets.*.amount' => [
+                'required',
+                'numeric',
+                'min:0.01',
+                'max:999999999.99',
+            ],
+
+            'budgets.*.month' => [
+                'required',
+                'integer',
+                'between:1,12',
+            ],
+
+            'budgets.*.year' => [
+                'required',
+                'integer',
+                'between:2020,2100',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Settings
+            |--------------------------------------------------------------------------
+            */
+
+            'settings' => [
+                'nullable',
+                'array',
+                'max:20',
+            ],
+
+            'settings.*' => [
+                'required',
+                'array',
+            ],
+
+            'settings.*.key' => [
+                'required',
+                'string',
+                'in:daily_reminder,expense_alerts,weekly_summary,dark_mode,notifications_enabled',
+            ],
+
+            'settings.*.value' => [
+                'required',
+                'boolean',
+            ],
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | IMPORTANT
+        |--------------------------------------------------------------------------
+        | Never trust a user_id or owner_id supplied by the client.
+        | Sanctum determines the authenticated user.
+        |--------------------------------------------------------------------------
+        */
 
         $user = $request->user();
 
@@ -28,25 +205,24 @@ class GuestMigrationController extends Controller
             */
 
             foreach ($validated['expenses'] ?? [] as $expense) {
-                DB::table('expenses')->insert([
-                    'user_id' => $user->id,
 
-                    'title' => $expense['title'] ?? '',
-
-                    'amount' => $expense['amount'] ?? 0,
-
-                    'category' => $expense['category'] ?? '',
-
-                    'expense_date' => $expense['expense_date'] ?? null,
-
-                    'description' => $expense['description'] ?? null,
-
-                    'created_at' => now(),
-
-                    'updated_at' => now(),
-                ]);
+                DB::table('expenses')->updateOrInsert(
+                    [
+                        'user_id' => $user->id,
+                        'client_id' => $expense['client_id'],
+                    ],
+                    [
+                        'title' => trim($expense['title']),
+                        'amount' => $expense['amount'],
+                        'category' => trim($expense['category']),
+                        'expense_date' => $expense['expense_date'],
+                        'description' => isset($expense['description'])
+                            ? trim($expense['description'])
+                            : null,
+                        'updated_at' => now(),
+                    ]
+                );
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -55,25 +231,29 @@ class GuestMigrationController extends Controller
             */
 
             foreach ($validated['goals'] ?? [] as $goal) {
-                DB::table('goals')->insert([
-                    'user_id' => $user->id,
 
-                    'title' => $goal['title'] ?? '',
+                $targetAmount = (float) $goal['target_amount'];
 
-                    'target_amount' => $goal['target_amount'] ?? 0,
+                $savedAmount = min(
+                    (float) $goal['saved_amount'],
+                    $targetAmount
+                );
 
-                    'saved_amount' => $goal['saved_amount'] ?? 0,
-
-                    'target_date' => $goal['target_date'] ?? null,
-
-                    'is_archived' => $goal['is_archived'] ?? 0,
-
-                    'created_at' => $goal['created_at'] ?? now(),
-
-                    'updated_at' => now(),
-                ]);
+                DB::table('goals')->updateOrInsert(
+                    [
+                        'user_id' => $user->id,
+                        'client_id' => $goal['client_id'],
+                    ],
+                    [
+                        'title' => trim($goal['title']),
+                        'target_amount' => $targetAmount,
+                        'saved_amount' => $savedAmount,
+                        'target_date' => $goal['target_date'] ?? null,
+                        'is_archived' => $savedAmount >= $targetAmount,
+                        'updated_at' => now(),
+                    ]
+                );
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -82,62 +262,31 @@ class GuestMigrationController extends Controller
             */
 
             foreach ($validated['budgets'] ?? [] as $budget) {
-                DB::table('budgets')->insert([
-                    'user_id' => $user->id,
 
-                    'amount' => $budget['amount'] ?? 0,
-
-                    'month' => $budget['month'] ?? now()->month,
-
-                    'year' => $budget['year'] ?? now()->year,
-
-                    'created_at' => $budget['created_at'] ?? now(),
-
-                    'updated_at' => now(),
-                ]);
+                DB::table('budgets')->updateOrInsert(
+                    [
+                        'user_id' => $user->id,
+                        'client_id' => $budget['client_id'],
+                    ],
+                    [
+                        'amount' => $budget['amount'],
+                        'month' => $budget['month'],
+                        'year' => $budget['year'],
+                        'updated_at' => now(),
+                    ]
+                );
             }
-
 
             /*
             |--------------------------------------------------------------------------
             | Settings
             |--------------------------------------------------------------------------
-            |
-            | Settings are stored directly on the users table.
-            |
             */
 
             $settings = [];
 
             foreach ($validated['settings'] ?? [] as $setting) {
-                if (!isset($setting['key'])) {
-                    continue;
-                }
-
-                $key = $setting['key'];
-                $value = $setting['value'] ?? null;
-
-                switch ($key) {
-                    case 'daily_reminder':
-                        $settings['daily_reminder'] = (bool) $value;
-                        break;
-
-                    case 'expense_alerts':
-                        $settings['expense_alerts'] = (bool) $value;
-                        break;
-
-                    case 'weekly_summary':
-                        $settings['weekly_summary'] = (bool) $value;
-                        break;
-
-                    case 'dark_mode':
-                        $settings['dark_mode'] = (bool) $value;
-                        break;
-
-                    case 'notifications_enabled':
-                        $settings['notifications_enabled'] = (bool) $value;
-                        break;
-                }
+                $settings[$setting['key']] = (bool) $setting['value'];
             }
 
             if (!empty($settings)) {
@@ -150,6 +299,7 @@ class GuestMigrationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Guest data migrated successfully.',
-        ]);
+        ], 200);
     }
 }
+

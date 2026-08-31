@@ -8,37 +8,47 @@ use App\Models\PasswordResetOtp;
 use App\Services\BrevoMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use App\Services\AccountDeletionService;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
     public function register(Request $request)
-    {
+{
+    $request->merge([
+        'email' => strtolower(trim($request->email ?? '')),
+        'name' => trim($request->name ?? ''),
+    ]);
 
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6'
-        ]);
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+        'password' => [
+            'required',
+            'confirmed',
+            Password::min(8)
+                ->mixedCase()
+                ->numbers()
+                ->symbols(),
+        ],
+    ]);
 
-        $user = User::create([
-            'name'=> $request->name,
-            'email'=> $request->email,
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+    ]);
 
-            // better practice
-            'password'=> Hash::make($request->password),
-        ]);
+    $token = $user
+        ->createToken('auth_token')
+        ->plainTextToken;
 
-        $token = $user
-            ->createToken('auth_token')
-            ->plainTextToken;
-
-        return response()->json([
-            'token' => $token,
-            'user' => $user
-        ]);
-    }
+    return response()->json([
+        'token' => $token,
+        'user' => $user,
+    ], 201);
+}
 
     public function login(Request $request)
     {
@@ -47,6 +57,8 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required',
         ]);
+
+    
 
         $user = User::where(
             'email',
@@ -94,8 +106,13 @@ class AuthController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+         'name' => ['required', 'string', 'max:255'],
+         'email' => [
+           'required',
+           'email',
+           'max:255',
+           'unique:users,email,' . $user->id,
+        ],
         ]);
 
         $user->update([
@@ -121,14 +138,21 @@ class AuthController extends Controller
 {
     $user = $request->user();
 
-    $user->update([
-        'daily_reminder' => $request->daily_reminder,
-        'expense_alerts' => $request->expense_alerts,
-        'weekly_summary' => $request->weekly_summary,
-
-        'dark_mode' => $request->dark_mode,
-        'notifications_enabled' => $request->notifications_enabled,
+    $request->validate([
+    'daily_reminder' => ['sometimes', 'boolean'],
+    'expense_alerts' => ['sometimes', 'boolean'],
+    'weekly_summary' => ['sometimes', 'boolean'],
+    'dark_mode' => ['sometimes', 'boolean'],
+    'notifications_enabled' => ['sometimes', 'boolean'],
     ]);
+
+    $user->update($request->only([
+    'daily_reminder',
+    'expense_alerts',
+    'weekly_summary',
+    'dark_mode',
+    'notifications_enabled',
+    ]));
 
     return response()->json([
         'message' => 'Preferences updated successfully'
@@ -236,24 +260,34 @@ public function deleteAccount(Request $request)
     ]);
 }
 
+//
 public function forgotPassword(Request $request)
 {
     $request->validate([
-        'email' => 'required|email',
+        'email' => ['required', 'email', 'max:255'],
     ]);
 
-    $user = User::where('email', $request->email)->first();
+    $email = strtolower(trim($request->email));
 
+    $user = User::where('email', $email)->first();
+
+    /*
+     * Do not reveal whether the email exists.
+     * This prevents account/email enumeration.
+     */
     if (!$user) {
         return response()->json([
-            'message' => 'No account found with this email.'
-        ], 404);
+            'message' =>
+                'If an account exists for this email, a verification code has been sent.',
+        ]);
     }
 
-    PasswordResetOtp::where('email', $request->email)->delete();
+    // Remove any previous reset request for this email.
+    PasswordResetOtp::where('email', $email)->delete();
 
+    // Generate a cryptographically secure 6-digit OTP.
     $otp = str_pad(
-        random_int(0, 999999),
+        (string) random_int(0, 999999),
         6,
         '0',
         STR_PAD_LEFT
@@ -261,21 +295,33 @@ public function forgotPassword(Request $request)
 
     $expiresAt = now()->addMinutes(10);
 
+    /*
+     * Never store the actual OTP in the database.
+     * Only store a hash.
+     */
     PasswordResetOtp::create([
-        'email' => $request->email,
-        'otp' => $otp,
+        'email' => $email,
+        'otp' => Hash::make($otp),
         'expires_at' => $expiresAt,
+        'attempts' => 0,
+        'verified_at' => null,
     ]);
 
     $sent = $this->mailService->sendOtpEmail(
-        $request->email,
+        $email,
         $user->name,
         $otp
     );
 
+    /*
+     * If email delivery fails, remove the OTP so that
+     * an unusable reset record is not left behind.
+     */
     if (!$sent) {
+        PasswordResetOtp::where('email', $email)->delete();
+
         return response()->json([
-            'message' => 'Unable to send OTP email.'
+            'message' => 'Unable to send OTP email.',
         ], 500);
     }
 
@@ -290,39 +336,101 @@ public function forgotPassword(Request $request)
 public function verifyOtp(Request $request)
 {
     $request->validate([
-        'email' => 'required|email',
-        'otp' => 'required|digits:6',
+        'email' => ['required', 'email', 'max:255'],
+        'otp' => ['required', 'digits:6'],
     ]);
 
-    $record = PasswordResetOtp::where('email', $request->email)
-        ->where('otp', $request->otp)
-        ->first();
+    $email = strtolower(trim($request->email));
 
+    $record = PasswordResetOtp::where('email', $email)->first();
+
+    /*
+     * Do not reveal whether the email exists or whether
+     * the OTP record exists.
+     */
     if (!$record) {
         return response()->json([
-            'message' => 'The verification code you entered is incorrect. Please try again.'
+            'message' =>
+                'The verification code is invalid or has expired.',
         ], 400);
     }
 
+    /*
+     * Check expiration before checking the OTP.
+     */
     if ($record->expires_at->isPast()) {
 
         $record->delete();
 
         return response()->json([
-            'message' => 'Your verification code has expired. Please request a new one.'
+            'message' =>
+                'Your verification code has expired. Please request a new one.',
         ], 400);
     }
 
+    /*
+     * Prevent unlimited OTP guessing.
+     */
+    if ($record->attempts >= 5) {
+
+        $record->delete();
+
+        return response()->json([
+            'message' =>
+                'Too many incorrect attempts. Please request a new verification code.',
+        ], 429);
+    }
+
+    /*
+     * Verify the submitted OTP against the stored hash.
+     */
+    if (!Hash::check($request->otp, $record->otp)) {
+
+        $record->increment('attempts');
+
+        $remainingAttempts = max(
+            0,
+            5 - $record->attempts
+        );
+
+        /*
+         * Invalidate the OTP after the fifth failed attempt.
+         */
+        if ($record->attempts >= 5) {
+            $record->delete();
+
+            return response()->json([
+                'message' =>
+                    'Too many incorrect attempts. Please request a new verification code.',
+            ], 429);
+        }
+
+        return response()->json([
+            'message' =>
+                'The verification code you entered is incorrect. Please try again.',
+            'remaining_attempts' => $remainingAttempts,
+        ], 400);
+    }
+
+    /*
+     * OTP is valid.
+     *
+     * Record that verification has actually happened.
+     */
+    $record->update([
+        'verified_at' => now(),
+    ]);
+
     return response()->json([
-        'message' => 'OTP verified successfully.'
+        'message' => 'OTP verified successfully.',
     ]);
 }
 
 public function resetPassword(Request $request)
 {
     $request->validate([
-        'email' => 'required|email',
-        'otp' => 'required|digits:6',
+        'email' => ['required', 'email', 'max:255'],
+        'otp' => ['required', 'digits:6'],
         'password' => [
             'required',
             'confirmed',
@@ -333,47 +441,98 @@ public function resetPassword(Request $request)
         ],
     ]);
 
-    $record = PasswordResetOtp::where('email', $request->email)
-        ->where('otp', $request->otp)
-        ->first();
+    $email = strtolower(trim($request->email));
 
-    if (!$record) {
-        return response()->json([
-            'message' => 'Invalid OTP.'
-        ], 400);
-    }
+    $result = DB::transaction(function () use ($request, $email) {
 
-    if (now()->greaterThan($record->expires_at)) {
+        $record = PasswordResetOtp::where('email', $email)
+            ->lockForUpdate()
+            ->first();
 
+        if (!$record) {
+            return response()->json([
+                'message' => 'Invalid or expired password reset request.',
+            ], 400);
+        }
+
+        /*
+         * OTP must have been verified first.
+         */
+        if (!$record->verified_at) {
+            return response()->json([
+                'message' =>
+                    'Please verify your OTP before resetting your password.',
+            ], 403);
+        }
+
+        /*
+         * Verification must still be within the OTP lifetime.
+         */
+        if ($record->expires_at->isPast()) {
+
+            $record->delete();
+
+            return response()->json([
+                'message' =>
+                    'OTP has expired. Please request a new one.',
+            ], 400);
+        }
+
+        /*
+         * Verify the OTP again before changing the password.
+         */
+        if (!Hash::check($request->otp, $record->otp)) {
+            return response()->json([
+                'message' => 'Invalid verification code.',
+            ], 400);
+        }
+
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+
+            $record->delete();
+
+            return response()->json([
+                'message' =>
+                    'Password reset request could not be completed.',
+            ], 400);
+        }
+
+        /*
+         * Prevent password reuse.
+         */
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' =>
+                    'New password cannot be the same as your current password.',
+            ], 422);
+        }
+
+        /*
+         * Change password.
+         */
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        /*
+         * Immediately invalidate the OTP.
+         */
         $record->delete();
 
+        /*
+         * Invalidate every active Sanctum token.
+         */
+        $user->tokens()->delete();
+
         return response()->json([
-            'message' => 'OTP has expired.'
-        ], 400);
-    }
+            'message' =>
+                'Password reset successfully. Please log in again.',
+        ]);
+    });
 
-    $user = User::where('email', $request->email)->first();
-
-    if (!$user) {
-        return response()->json([
-            'message' => 'User not found.'
-        ], 404);
-    }
-
-    $user->update([
-        'password' => Hash::make($request->password),
-    ]);
-
-    // Delete OTP after successful reset
-    $record->delete();
-
-    // Log out every device
-    $user->tokens()->delete();
-
-    return response()->json([
-        'message' => 'Password reset successfully. Please log in again.',
-    ]);
+    return $result;
 }
-
 
 }

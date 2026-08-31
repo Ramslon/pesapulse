@@ -36,10 +36,14 @@ Route::get('/health', function () {
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
 
-    Route::get('/user',
-        function (Request $request) {
+    Route::get('/user', function (Request $request) {
+    $user = $request->user();
 
-        return $request->user();
+    return response()->json([
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+    ]);
     });
 
     Route::get('/profile', [AuthController::class, 'getProfile']);
@@ -50,7 +54,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     ])->middleware('throttle:write');
 
 
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout'])
+      ->middleware('throttle:write');
 
     Route::delete('/delete-account', [AuthController::class, 'deleteAccount'])  
       ->middleware('throttle:sensitive');
@@ -122,7 +127,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     Route::get('/budget-summary', [BudgetController::class, 'summary']);
 
     
-    Route::post('/goals', [GoalController::class, 'store']);
+    Route::post('/goals', [GoalController::class, 'store'])
+      ->middleware('throttle:write');
 
     Route::get('/goals', [GoalController::class, 'index']);
 
@@ -133,7 +139,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
 
     Route::get('/goals/{goal}/progress', [GoalController::class, 'progress']);
 
-    Route::put('/goals/{goal}/progress', [GoalController::class, 'updateProgress']);
+    Route::put('/goals/{goal}/progress', [GoalController::class, 'updateProgress']) 
+      ->middleware('throttle:write');
 
     Route::get('/goals/{goal}/insights', [GoalController::class, 'insights']) 
       ->middleware('throttle:expensive');
@@ -141,18 +148,22 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     Route::get('/goals/{goal}/forecast', [GoalController::class, 'forecast'])
       ->middleware('throttle:expensive');
 
-    Route::put('/goals/{goal}', [GoalController::class, 'update']);
-
-    Route::put('/goals/{goal}/archive', [GoalController::class, 'archive']);
-
     Route::get('/goals/archived', [GoalController::class, 'archived']);
 
-    Route::put('/goals/{goal}/restore', [GoalController::class, 'restore']);
+    Route::put('/goals/{goal}', [GoalController::class, 'update'])
+      ->middleware('throttle:write');
 
-    Route::delete('/goals/{goal}', [GoalController::class, 'destroy']);
+    Route::put('/goals/{goal}/archive', [GoalController::class, 'archive'])
+      ->middleware('throttle:write');
+
+    Route::put('/goals/{goal}/restore', [GoalController::class, 'restore'])
+      ->middleware('throttle:write');
+
+    Route::delete('/goals/{goal}', [GoalController::class, 'destroy'])
+      ->middleware('throttle:write');
 
     Route::post('/guest/migrate', [
     GuestMigrationController::class,
     'migrate',
-    ])->middleware('throttle:write');
+    ])->middleware('throttle:sensitive');
 });
