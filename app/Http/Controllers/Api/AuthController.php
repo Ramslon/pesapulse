@@ -49,43 +49,40 @@ class AuthController extends Controller
         'user' => $user,
     ], 201);
 }
+public function login(Request $request)
+{
+    $request->merge([
+        'email' => strtolower(trim($request->email ?? '')),
+    ]);
 
-    public function login(Request $request)
-    {
+    $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required', 'string'],
+    ]);
 
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+    $user = User::where('email', $request->email)->first();
 
-    
-
-        $user = User::where(
-            'email',
-            $request->email
-        )->first();
-       
-        if (
-            !$user ||
-            !Hash::check(
-                $request->password,
-                $user->password
-            )
-        ) {
-
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
-        }
-
-        $token = $user
-            ->createToken('auth_token')
-            ->plainTextToken;
-
+    if (
+        !$user ||
+        !Hash::check($request->password, $user->password)
+    ) {
         return response()->json([
-            'token' => $token,
-            'user' => $user
-        ]);
+            'message' => 'Invalid credentials',
+        ], 401);
+    }
+
+    // Optional but recommended: remove previously issued tokens
+    // if you want only the newest session to remain active.
+    // $user->tokens()->delete();
+
+    $token = $user
+        ->createToken('auth_token')
+        ->plainTextToken;
+
+    return response()->json([
+        'token' => $token,
+        'user' => $user,
+    ]);
     }
 
     public function logout(Request $request)

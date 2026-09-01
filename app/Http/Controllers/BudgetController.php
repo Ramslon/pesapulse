@@ -8,20 +8,78 @@ use Illuminate\Http\Request;
 
 class BudgetController extends Controller
 {
-    public function store(Request $request)
+public function store(Request $request)
 {
+    $validated = $request->validate([
+        'client_id' => [
+            'required',
+            'string',
+            'max:100',
+        ],
+
+        'amount' => [
+            'required',
+            'numeric',
+            'min:0.01',
+            'max:999999999.99',
+        ],
+
+        'month' => [
+            'required',
+            'integer',
+            'between:1,12',
+        ],
+
+        'year' => [
+            'required',
+            'integer',
+            'between:2020,2100',
+        ],
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | SECURITY
+    |--------------------------------------------------------------------------
+    | Never trust user_id from the client.
+    | Sanctum determines the authenticated user.
+    */
+
+    $user = $request->user();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Idempotent budget creation/update
+    |--------------------------------------------------------------------------
+    |
+    | The combination of user_id + client_id identifies the local budget.
+    |
+    | This means:
+    |
+    | User 4 + test-budget-001
+    |
+    | is different from:
+    |
+    | User 5 + test-budget-001
+    |
+    | Sending the same request again updates the existing record instead
+    | of creating a duplicate.
+    |
+    */
+
     $budget = Budget::updateOrCreate(
         [
-            'user_id' => $request->user()->id,
-            'month' => now()->month,
-            'year' => now()->year,
+            'user_id' => $user->id,
+            'client_id' => $validated['client_id'],
         ],
         [
-            'amount' => $request->amount,
+            'amount' => $validated['amount'],
+            'month' => $validated['month'],
+            'year' => $validated['year'],
         ]
     );
 
-    return response()->json($budget);
+    return response()->json($budget, 200);
 }
 
 public function summary(Request $request)
@@ -39,16 +97,21 @@ public function summary(Request $request)
         ->count();
 
     $spent = $user->expenses()
-        ->whereMonth('created_at', now()->month)
+        ->whereMonth('expense_date', now()->month)
+        ->whereYear('expense_date', now()->year)
         ->sum('amount');
 
+    $budgetAmount = $budget?->amount ?? 0;
+
     return response()->json([
-        'budget' => $budget?->amount ?? 0,
+        'budget' => $budgetAmount,
         'budget_count' => $budgetCount,
         'spent' => $spent,
-        'remaining' => ($budget?->amount ?? 0) - $spent,
+        'remaining' => $budgetAmount - $spent,
     ]);
 }
+
+
 
 public function destroy(Request $request)
 {

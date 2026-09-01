@@ -186,9 +186,7 @@ class GuestMigrationController extends Controller
         ]);
 
         /*
-        |--------------------------------------------------------------------------
-        | IMPORTANT
-        |--------------------------------------------------------------------------
+        
         | Never trust a user_id or owner_id supplied by the client.
         | Sanctum determines the authenticated user.
         |--------------------------------------------------------------------------
