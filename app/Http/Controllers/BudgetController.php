@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 
 class BudgetController extends Controller
 {
+    
 public function store(Request $request)
 {
     $validated = $request->validate([
@@ -41,46 +42,62 @@ public function store(Request $request)
     |--------------------------------------------------------------------------
     | SECURITY
     |--------------------------------------------------------------------------
-    | Never trust user_id from the client.
-    | Sanctum determines the authenticated user.
+    | Never accept user_id from the client.
+    | The authenticated Sanctum user determines ownership.
     */
 
     $user = $request->user();
 
     /*
     |--------------------------------------------------------------------------
-    | Idempotent budget creation/update
+    | Find existing budget
     |--------------------------------------------------------------------------
-    |
-    | The combination of user_id + client_id identifies the local budget.
-    |
-    | This means:
-    |
-    | User 4 + test-budget-001
-    |
-    | is different from:
-    |
-    | User 5 + test-budget-001
-    |
-    | Sending the same request again updates the existing record instead
-    | of creating a duplicate.
-    |
     */
 
-    $budget = Budget::updateOrCreate(
-        [
-            'user_id' => $user->id,
-            'client_id' => $validated['client_id'],
-        ],
-        [
-            'amount' => $validated['amount'],
-            'month' => $validated['month'],
-            'year' => $validated['year'],
-        ]
-    );
+    $budget = Budget::where('user_id', $user->id)
+        ->where('client_id', $validated['client_id'])
+        ->first();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update existing budget
+    |--------------------------------------------------------------------------
+    */
+
+    if ($budget) {
+
+        $budget->amount = $validated['amount'];
+        $budget->month = $validated['month'];
+        $budget->year = $validated['year'];
+
+        $budget->save();
+
+    } else {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create new budget
+        |--------------------------------------------------------------------------
+        |
+        | user_id is assigned explicitly by the server.
+        | It is NOT taken from the request.
+        |
+        */
+
+        $budget = new Budget();
+
+        $budget->user_id = $user->id;
+        $budget->client_id = $validated['client_id'];
+        $budget->amount = $validated['amount'];
+        $budget->month = $validated['month'];
+        $budget->year = $validated['year'];
+
+        $budget->save();
+    }
 
     return response()->json($budget, 200);
 }
+
 
 public function summary(Request $request)
 {
