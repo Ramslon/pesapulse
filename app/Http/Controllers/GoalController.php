@@ -110,7 +110,10 @@ public function updateProgress(Request $request, Goal $goal)
             ->lockForUpdate()
             ->firstOrFail();
 
-        $goal->saved_amount += $amount;
+        $goal->saved_amount = min(
+        $goal->saved_amount + $amount,
+        $goal->target_amount
+         );
 
         $percentage = 0;
 
@@ -401,8 +404,9 @@ public function forecast(Request $request, $id)
     );
 
     $expectedProgress = ($elapsedDays / $totalDays) * 100;
-    $actualProgress = ($saved / $target) * 100;
-
+    $actualProgress = $target > 0
+    ? ($saved / $target) * 100
+    : 0;
     if ($remainingAmount <= 0) {
         return response()->json([
             'goal' => $goal->title,

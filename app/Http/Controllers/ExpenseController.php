@@ -2,180 +2,237 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use App\Models\Expense;
 use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
+    /**
+     * Display authenticated user's expenses.
+     */
     public function index(Request $request)
     {
-    return $request->user()
-        ->expenses()
-        ->latest()
-        ->paginate(5);
+        return $request->user()
+            ->expenses()
+            ->latest()
+            ->paginate(5);
     }
-    // Adding search expenses
-    public function search (Request $request)
+
+    /**
+     * Search authenticated user's expenses.
+     */
+    public function search(Request $request)
     {
-        $query = Expense::where('user_id', Auth::id());
-
-        if ($request->title) {
-        $query->where('title', 'LIKE', '%' . $request->title . '%');
-
-        if ($request->category) {
-        $query->where('category', 'LIKE', '%' . $request->category . '%');
-    }
-    
-        return response()->json(
-        $query->get()
-    );
-
-    }
-
-    }
-      // Creating a simple form methods
-    public function create()
-    {
-        return '
-        <form method="POST" action="/expenses">
-
-            <input type="hidden" name="_token" value="' . csrf_token() . '">
-
-            <input type="text" name="title" placeholder="Expense Title"><br><br>
-
-            <input type="number" step="0.01" name="amount" placeholder="Amount"><br><br>
-
-            <input type="text" name="category" placeholder="Category"><br><br>
-
-            <input type="date" name="expense_date"><br><br>
-
-            <textarea name="description" placeholder="Description"></textarea><br><br>
-
-            <button type="submit">Save Expense</button>
-        </form>
-        ';     
-    }
-      //Addding real insert logic
-    public function store(Request $request)
-    {
-        $expense=Expense::create([
-            'user_id' => auth::id(),
-            'title'=> $request->title,
-            'amount'=> $request->amount,
-            'category'=> $request->category,
-            'expense_date'=> $request->expense_date,
-            'description'=> $request->description,
+        $request->validate([
+            'title' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:100'],
         ]);
 
+        $query = $request->user()->expenses();
+
+        if ($request->filled('title')) {
+            $query->where(
+                'title',
+                'LIKE',
+                '%' . trim($request->title) . '%'
+            );
+        }
+
+        if ($request->filled('category')) {
+            $query->where(
+                'category',
+                'LIKE',
+                '%' . trim($request->category) . '%'
+            );
+        }
+
+        return response()->json(
+            $query->latest()->paginate(5)
+        );
+    }
+
+    /**
+     * Create a new expense.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'amount' => [
+                'required',
+                'numeric',
+                'min:0.01',
+                'max:999999999.99',
+            ],
+
+            'category' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'expense_date' => [
+                'required',
+                'date',
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+        ]);
+
+        $expense = $request->user()->expenses()->create([
+            'title' => trim($validated['title']),
+            'amount' => $validated['amount'],
+            'category' => trim($validated['category']),
+            'expense_date' => $validated['expense_date'],
+            'description' => isset($validated['description'])
+                ? trim($validated['description'])
+                : null,
+        ]);
 
         return response()->json($expense, 201);
     }
-    //Added Delete Expense
-    
-    public function destroy($id)
+
+    /**
+     * Display one expense belonging to authenticated user.
+     */
+    public function show(Request $request, $id)
     {
-        $expense = Expense::where('user_id', Auth::id())
-                      ->findOrFail($id);
+        $expense = $request->user()
+            ->expenses()
+            ->findOrFail($id);
+
+        return response()->json($expense);
+    }
+
+    /**
+     * Update an expense belonging to authenticated user.
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'amount' => [
+                'required',
+                'numeric',
+                'min:0.01',
+                'max:999999999.99',
+            ],
+
+            'category' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'expense_date' => [
+                'required',
+                'date',
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+        ]);
+
+        $expense = $request->user()
+            ->expenses()
+            ->findOrFail($id);
+
+        $expense->update([
+            'title' => trim($validated['title']),
+            'amount' => $validated['amount'],
+            'category' => trim($validated['category']),
+            'expense_date' => $validated['expense_date'],
+            'description' => isset($validated['description'])
+                ? trim($validated['description'])
+                : null,
+        ]);
+
+        return response()->json([
+            'message' => 'Expense updated successfully',
+            'expense' => $expense->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete an expense belonging to authenticated user.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $expense = $request->user()
+            ->expenses()
+            ->findOrFail($id);
 
         $expense->delete();
 
         return response()->json([
-             'message' => 'Expense deleted successfully'
+            'message' => 'Expense deleted successfully',
         ]);
     }
-    //Add Update Expense
 
-    public function update(Request $request, $id)
+    /**
+     * Expense analytics for authenticated user.
+     */
+    public function analytics(Request $request)
     {
-        $request->validate([
-             'title' => 'required',
-             'amount' => 'required|numeric',
-             'category' => 'required',
-             'expense_date' => 'required|date',
-        ]);
+        $expenses = $request->user()->expenses()->get();
 
-        $expense = Expense::where('user_id', Auth::id())->findOrFail($id);
+        $total = $expenses->sum('amount');
 
-        $expense->update([
-             'title' => $request->title,
-             'amount' => $request->amount,
-             'category' => $request->category,
-             'expense_date' => $request->expense_date,
-             'description' => $request->description,
-        ]);
+        $categories = $expenses
+            ->groupBy('category')
+            ->map(function ($items) {
+                return $items->sum('amount');
+            });
 
         return response()->json([
-             'message' => 'Expense updated successfully',
-             'expense' => $expense
+            'total_spending' => $total,
+            'categories' => $categories,
         ]);
     }
-    
-    // Add Show Expense
-    public function show($id)
+
+    /**
+     * Dashboard for authenticated user.
+     */
+    public function dashboard(Request $request)
     {
-        return Expense::findOrFail($id);
+        $user = $request->user();
 
-    }
-    //Add Edit Expense 
-    public function edit($id)
-    {
-        return "Edit form for expense" . $id;
+        $recentExpenses = $user->expenses()
+            ->latest('expense_date')
+            ->latest('id')
+            ->take(3)
+            ->get();
 
-    }
+        return response()->json([
+            'summary' => [
+                'total_expenses' => $user->expenses()->sum('amount'),
 
-    public function analytics(Request $request)
-{
-    $expenses = $request->user()->expenses;
+                'total_count' => $user->expenses()->count(),
 
-    $total = $expenses->sum('amount');
-
-    $categories = $expenses
-        ->groupBy('category')
-        ->map(function ($items) {
-            return $items->sum('amount');
-        });
-
-    return response()->json([
-        'total_spending' => $total,
-        'categories' => $categories,
-    ]);
-}
-
-public function dashboard(Request $request)
-{
-    $user = $request->user();
-
-    $recentExpenses = $user->expenses()
-        ->latest('expense_date')
-        ->latest('id')
-        ->take(3)
-        ->get();
-    
-        
-    return response()->json([
-
-        'summary' => [
-
-            'total_expenses' =>
-
-                $user->expenses()->sum('amount'),
-
-            'total_count' =>
-
-                $user->expenses()->count(),
-
-            'categories' =>
-
-                $user->expenses()
+                'categories' => $user->expenses()
                     ->distinct('category')
                     ->count('category'),
-        ],
+            ],
 
-        'recent_expenses' => $recentExpenses,
-    ]);
-}
-        
-    
+            'recent_expenses' => $recentExpenses,
+        ]);
+    }
 }
 
