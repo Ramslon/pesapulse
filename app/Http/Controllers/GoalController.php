@@ -71,6 +71,341 @@ public function index(Request $request)
     );
 }
 
+public function derivedData(Request $request)
+{
+    $user = $request->user();
+
+    $goals = $user->goals()
+        ->where('is_archived', false)
+        ->latest()
+        ->get();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Goal Analytics
+    |--------------------------------------------------------------------------
+    */
+
+    $totalGoals = $goals->count();
+
+    $completedGoals = $goals->filter(function ($goal) {
+        return $goal->saved_amount >= $goal->target_amount;
+    })->count();
+
+    $activeGoals = $totalGoals - $completedGoals;
+
+    $completionRate = $totalGoals > 0
+        ? round(($completedGoals / $totalGoals) * 100, 2)
+        : 0;
+
+    $analytics = [
+        'total_goals' => $totalGoals,
+        'completed_goals' => $completedGoals,
+        'active_goals' => $activeGoals,
+        'completion_rate' => $completionRate,
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Forecasts
+    |--------------------------------------------------------------------------
+    */
+
+    $forecasts = [];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Insights
+    |--------------------------------------------------------------------------
+    */
+
+    $insights = [];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Upcoming Deadlines
+    |--------------------------------------------------------------------------
+    */
+
+    $upcomingDeadlines = [];
+
+    foreach ($goals as $goal) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Goal Insight
+        |--------------------------------------------------------------------------
+        */
+
+        $targetAmount = $goal->target_amount;
+        $savedAmount = $goal->saved_amount;
+
+        $remainingAmount = max(
+            0,
+            $targetAmount - $savedAmount
+        );
+
+        $daysRemaining = 0;
+
+        if ($goal->target_date) {
+            $daysRemaining = ceil(
+                now()->diffInDays(
+                    $goal->target_date,
+                    false
+                )
+            );
+        }
+
+        $monthlyNeeded = 0;
+
+        if ($daysRemaining > 0) {
+
+            $monthsRemaining = max(
+                1,
+                ceil($daysRemaining / 30)
+            );
+
+            $monthlyNeeded = round(
+                $remainingAmount / $monthsRemaining,
+                2
+            );
+        }
+
+        $status = 'healthy';
+
+        if (
+            $daysRemaining <= 30 &&
+            $remainingAmount > 0
+        ) {
+            $status = 'urgent';
+        }
+
+        if ($savedAmount >= $targetAmount) {
+            $status = 'completed';
+        }
+
+        if ($status === 'completed') {
+            $message = 'Congratulations! Goal achieved.';
+        } elseif ($status === 'urgent') {
+            $message = 'Increase savings to reach your goal before the deadline.';
+        } else {
+            $message = 'You are on track toward your goal.';
+        }
+
+        $insights[$goal->id] = [
+            'goal' => $goal->title,
+            'remaining_amount' => $remainingAmount,
+            'days_remaining' => $daysRemaining,
+            'monthly_needed' => $monthlyNeeded,
+            'status' => $status,
+            'message' => $message,
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Goal Forecast
+        |--------------------------------------------------------------------------
+        */
+
+        $today = now();
+
+        $targetDate = $goal->target_date
+            ? \Carbon\Carbon::parse($goal->target_date)
+            : null;
+
+        $saved = $goal->saved_amount;
+        $target = $goal->target_amount;
+
+        $remainingAmount = max(
+            0,
+            $target - $saved
+        );
+
+        if (!$targetDate) {
+
+            $forecasts[$goal->id] = [
+                'goal' => $goal->title,
+                'forecast' => 'no_target_date',
+                'message' =>
+                    'Forecast unavailable because no target date was set.',
+            ];
+
+        } else {
+
+            $totalDays = max(
+                1,
+                \Carbon\Carbon::parse($goal->created_at)
+                    ->diffInDays($targetDate)
+            );
+
+            $elapsedDays = max(
+                1,
+                \Carbon\Carbon::parse($goal->created_at)
+                    ->diffInDays($today)
+            );
+
+            $remainingDays = max(
+                0,
+                ceil(
+                    $today->diffInDays(
+                        $targetDate,
+                        false
+                    )
+                )
+            );
+
+            $expectedProgress =
+                ($elapsedDays / $totalDays) * 100;
+
+            $actualProgress = $target > 0
+                ? ($saved / $target) * 100
+                : 0;
+
+            if ($remainingAmount <= 0) {
+
+                $forecasts[$goal->id] = [
+                    'goal' => $goal->title,
+                    'forecast' => 'completed',
+                    'message' =>
+                        'Congratulations! You have completed this goal.',
+                    'actual_progress' =>
+                        round($actualProgress, 2),
+                    'expected_progress' =>
+                        round($expectedProgress, 2),
+                    'remaining_amount' => 0,
+                    'remaining_days' => 0,
+                    'estimated_completion_date' =>
+                        $today->toDateString(),
+                    'recommended_daily_saving' => 0,
+                    'recommended_monthly_saving' => 0,
+                ];
+
+            } else {
+
+                if (
+                    $actualProgress >=
+                    ($expectedProgress + 10)
+                ) {
+
+                    $forecastStatus = 'ahead';
+
+                    $forecastMessage =
+                        'Excellent! You are ahead of schedule.';
+
+                } elseif (
+                    $actualProgress >=
+                    ($expectedProgress - 10)
+                ) {
+
+                    $forecastStatus = 'on_track';
+
+                    $forecastMessage =
+                        'Great! You are on track to reach your goal.';
+
+                } else {
+
+                    $forecastStatus = 'behind';
+
+                    $forecastMessage =
+                        'You need to increase your savings to reach this goal.';
+                }
+
+                $dailySavingRate =
+                    $saved / $elapsedDays;
+
+                if ($dailySavingRate > 0) {
+
+                    $estimatedDays = ceil(
+                        $remainingAmount /
+                        $dailySavingRate
+                    );
+
+                    $estimatedCompletionDate =
+                        $today
+                            ->copy()
+                            ->addDays($estimatedDays)
+                            ->toDateString();
+
+                } else {
+
+                    $estimatedCompletionDate = null;
+                }
+
+                $recommendedDailySaving =
+                    $remainingDays > 0
+                        ? round(
+                            $remainingAmount /
+                            $remainingDays,
+                            2
+                        )
+                        : 0;
+
+                $recommendedMonthlySaving =
+                    round(
+                        $recommendedDailySaving * 30,
+                        2
+                    );
+
+                $forecasts[$goal->id] = [
+                    'goal' => $goal->title,
+                    'forecast' => $forecastStatus,
+                    'message' => $forecastMessage,
+                    'actual_progress' =>
+                        round($actualProgress, 2),
+                    'expected_progress' =>
+                        round($expectedProgress, 2),
+                    'remaining_amount' =>
+                        round($remainingAmount, 2),
+                    'remaining_days' =>
+                        $remainingDays,
+                    'estimated_completion_date' =>
+                        $estimatedCompletionDate,
+                    'recommended_daily_saving' =>
+                        $recommendedDailySaving,
+                    'recommended_monthly_saving' =>
+                        $recommendedMonthlySaving,
+                ];
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Upcoming Deadline
+        |--------------------------------------------------------------------------
+        */
+
+        if ($goal->target_date) {
+
+            $daysRemaining = now()
+                ->startOfDay()
+                ->diffInDays(
+                    $goal->target_date->startOfDay(),
+                    false
+                );
+
+            if (
+                $daysRemaining <= 3 &&
+                $daysRemaining >= 0
+            ) {
+                $upcomingDeadlines[] = [
+                    'goal_id' => $goal->id,
+                    'title' => $goal->title,
+                    'days_remaining' => $daysRemaining,
+                    'target_date' => $goal->target_date,
+                ];
+            }
+        }
+    }
+
+    return response()->json([
+        'goals' => $goals,
+        'analytics' => $analytics,
+        'forecasts' => $forecasts,
+        'insights' => $insights,
+        'upcoming_deadlines' => $upcomingDeadlines,
+    ]);
+}
+
 
  public function progress(Request $request, Goal $goal)
 {

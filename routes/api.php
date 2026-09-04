@@ -132,6 +132,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
 
     Route::get('/goals', [GoalController::class, 'index']);
 
+    Route::get('/goals/derived-data', [GoalController::class, 'derivedData']);
+
     Route::get( '/goals/upcoming-deadlines', [GoalController::class, 'upcomingDeadlines']);
 
     Route::get('/goals/analytics', [GoalController::class, 'analytics'])
