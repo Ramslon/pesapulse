@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -8,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Budget extends Model
 {
     protected $fillable = [
+        'user_id',
         'client_id',
         'amount',
         'month',
@@ -19,4 +19,3 @@ class Budget extends Model
         return $this->belongsTo(User::class);
     }
 }
-
