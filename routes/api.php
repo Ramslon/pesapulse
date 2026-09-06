@@ -33,6 +33,12 @@ Route::get('/health', function () {
     ]);
 });
 
+Route::get('/diagnostic-public', function () {
+    return response()->json([
+        'status' => 'ok',
+    ]);
+});
+
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
 
