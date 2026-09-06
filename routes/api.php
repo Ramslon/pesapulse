@@ -36,6 +36,14 @@ Route::get('/health', function () {
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
 
+
+    Route::get('/diagnostic-auth', function (Request $request) {
+    return response()->json([
+        'status' => 'ok',
+        'user_id' => $request->user()->id,
+    ]);
+    });
+
     Route::get('/user', function (Request $request) {
     $user = $request->user();
 
