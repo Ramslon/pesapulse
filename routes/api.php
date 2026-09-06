@@ -39,6 +39,13 @@ Route::get('/diagnostic-public', function () {
     ]);
 });
 
+Route::get('/diagnostic-sanctum', function (Request $request) {
+    return response()->json([
+        'status' => 'ok',
+        'user_id' => $request->user()->id,
+    ]);
+})->middleware('auth:sanctum');
+
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
 
