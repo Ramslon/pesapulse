@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\Log;
+
 use Illuminate\Http\Request;
 
 use App\Models\Goal;
@@ -438,90 +440,124 @@ public function updateProgress(Request $request, Goal $goal)
 
     $amount = $request->input('amount');
 
-    $result = DB::transaction(function () use ($goal, $amount) {
+    $transactionStartedAt = microtime(true);
 
-        // Lock the goal row for the entire update transaction.
-        $goal = Goal::whereKey($goal->id)
-            ->lockForUpdate()
-            ->firstOrFail();
+$result = DB::transaction(function () use ($goal, $amount) {
 
-        $goal->saved_amount = min(
+    $lockStartedAt = microtime(true);
+
+    $goal = Goal::whereKey($goal->id)
+        ->lockForUpdate()
+        ->firstOrFail();
+
+    Log::info('GOAL PROGRESS: lock acquired', [
+        'goal_id' => $goal->id,
+        'lock_ms' => round(
+            (microtime(true) - $lockStartedAt) * 1000,
+            2
+        ),
+    ]);
+
+    $goal->saved_amount = min(
         $goal->saved_amount + $amount,
         $goal->target_amount
-         );
+    );
 
-        $percentage = 0;
+    $percentage = 0;
 
-        if ($goal->target_amount > 0) {
-            $percentage = round(
-                ($goal->saved_amount / $goal->target_amount) * 100,
-                2
-            );
-        }
+    if ($goal->target_amount > 0) {
+        $percentage = round(
+            ($goal->saved_amount / $goal->target_amount) * 100,
+            2
+        );
+    }
 
-        $milestoneReached = null;
+    $milestoneReached = null;
 
-        if (
-            $percentage >= 100 &&
-            !$goal->milestone_100_notified
-        ) {
-            $goal->milestone_100_notified = true;
+    if (
+        $percentage >= 100 &&
+        !$goal->milestone_100_notified
+    ) {
+        $goal->milestone_100_notified = true;
 
-            $milestoneReached = [
-                'percentage' => 100,
-                'message' =>
-                    "Congratulations! You've completed your goal.",
-            ];
-        } elseif (
-            $percentage >= 75 &&
-            !$goal->milestone_75_notified
-        ) {
-            $goal->milestone_75_notified = true;
-
-            $milestoneReached = [
-                'percentage' => 75,
-                'message' =>
-                    "Amazing! You've reached 75% of your goal.",
-            ];
-        } elseif (
-            $percentage >= 50 &&
-            !$goal->milestone_50_notified
-        ) {
-            $goal->milestone_50_notified = true;
-
-            $milestoneReached = [
-                'percentage' => 50,
-                'message' =>
-                    "Great progress! You've reached 50% of your goal.",
-            ];
-        } elseif (
-            $percentage >= 25 &&
-            !$goal->milestone_25_notified
-        ) {
-            $goal->milestone_25_notified = true;
-
-            $milestoneReached = [
-                'percentage' => 25,
-                'message' =>
-                    "Nice start! You've reached 25% of your goal.",
-            ];
-        }
-
-        $goal->save();
-
-        return [
-            'goal' => $goal->fresh(),
-            'percentage' => $percentage,
-            'milestone' => $milestoneReached,
+        $milestoneReached = [
+            'percentage' => 100,
+            'message' =>
+                "Congratulations! You've completed your goal.",
         ];
-    });
+    } elseif (
+        $percentage >= 75 &&
+        !$goal->milestone_75_notified
+    ) {
+        $goal->milestone_75_notified = true;
 
-    return response()->json([
-        'message' => 'Goal updated successfully',
-        'goal' => $result['goal'],
-        'percentage' => $result['percentage'],
-        'milestone' => $result['milestone'],
+        $milestoneReached = [
+            'percentage' => 75,
+            'message' =>
+                "Amazing! You've reached 75% of your goal.",
+        ];
+    } elseif (
+        $percentage >= 50 &&
+        !$goal->milestone_50_notified
+    ) {
+        $goal->milestone_50_notified = true;
+
+        $milestoneReached = [
+            'percentage' => 50,
+            'message' =>
+                "Great progress! You've reached 50% of your goal.",
+        ];
+    } elseif (
+        $percentage >= 25 &&
+        !$goal->milestone_25_notified
+    ) {
+        $goal->milestone_25_notified = true;
+
+        $milestoneReached = [
+            'percentage' => 25,
+            'message' =>
+                "Nice start! You've reached 25% of your goal.",
+        ];
+    }
+
+    $saveStartedAt = microtime(true);
+
+    $goal->save();
+
+    Log::info('GOAL PROGRESS: save completed', [
+        'goal_id' => $goal->id,
+        'save_ms' => round(
+            (microtime(true) - $saveStartedAt) * 1000,
+            2
+        ),
     ]);
+
+    $freshStartedAt = microtime(true);
+
+    $freshGoal = $goal->fresh();
+
+    Log::info('GOAL PROGRESS: fresh completed', [
+        'goal_id' => $goal->id,
+        'fresh_ms' => round(
+            (microtime(true) - $freshStartedAt) * 1000,
+            2
+        ),
+    ]);
+
+    return [
+        'goal' => $freshGoal,
+        'percentage' => $percentage,
+        'milestone' => $milestoneReached,
+    ];
+});
+
+Log::info('GOAL PROGRESS: transaction completed', [
+    'goal_id' => $goal->id,
+    'transaction_ms' => round(
+        (microtime(true) - $transactionStartedAt) * 1000,
+        2
+    ),
+]);
 }
 
 public function update(Request $request, Goal $goal)
