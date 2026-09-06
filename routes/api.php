@@ -9,6 +9,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\Api\GuestMigrationController;
+use Illuminate\Support\Facades\DB;
 
 Route::middleware('throttle:auth')->group(function () {
 
@@ -51,6 +52,33 @@ Route::get('/diagnostic-throttle', function () {
         'status' => 'ok',
     ]);
 })->middleware('throttle:api');
+
+Route::get('/diagnostic-db', function () {
+    $startedAt = microtime(true);
+
+    $dbStartedAt = microtime(true);
+
+    $result = DB::select('SELECT 1 AS test');
+
+    $dbMs = round(
+        (microtime(true) - $dbStartedAt) * 1000,
+        2
+    );
+
+    $totalMs = round(
+        (microtime(true) - $startedAt) * 1000,
+        2
+    );
+
+    return response()->json([
+        'status' => 'ok',
+        'database_result' => $result,
+        '_diagnostics' => [
+            'database_ms' => $dbMs,
+            'total_ms' => $totalMs,
+        ],
+    ]);
+});
 
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
