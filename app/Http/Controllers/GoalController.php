@@ -429,9 +429,11 @@ public function derivedData(Request $request)
         'percentage' => $percentage,
     ]);
 }
-
 public function updateProgress(Request $request, Goal $goal)
 {
+    // Start measuring the entire controller method.
+    $controllerStartedAt = microtime(true);
+
     $this->authorizeGoal($request, $goal);
 
     $request->validate([
@@ -440,7 +442,7 @@ public function updateProgress(Request $request, Goal $goal)
 
     $amount = $request->input('amount');
 
-    $startedAt = microtime(true);
+    $transactionStartedAt = microtime(true);
 
     $result = DB::transaction(function () use ($goal, $amount) {
 
@@ -535,13 +537,6 @@ public function updateProgress(Request $request, Goal $goal)
             2
         );
 
-        $requestStartedAt = microtime(true);
-
-        $controllerMs = round(
-    (microtime(true) - $requestStartedAt) * 1000,
-    2
-);
-
         return [
             'goal' => $freshGoal,
             'percentage' => $percentage,
@@ -551,13 +546,17 @@ public function updateProgress(Request $request, Goal $goal)
                 'lock_ms' => $lockMs,
                 'save_ms' => $saveMs,
                 'fresh_ms' => $freshMs,
-                'controller_ms' => $controllerMs,
             ],
         ];
     });
 
     $transactionMs = round(
-        (microtime(true) - $startedAt) * 1000,
+        (microtime(true) - $transactionStartedAt) * 1000,
+        2
+    );
+
+    $controllerMs = round(
+        (microtime(true) - $controllerStartedAt) * 1000,
         2
     );
 
@@ -565,7 +564,9 @@ public function updateProgress(Request $request, Goal $goal)
         'message' => 'Goal updated successfully',
 
         'goal' => $result['goal'],
+
         'percentage' => $result['percentage'],
+
         'milestone' => $result['milestone'],
 
         '_diagnostics' => [
@@ -580,6 +581,9 @@ public function updateProgress(Request $request, Goal $goal)
 
             'transaction_ms' =>
                 $transactionMs,
+
+            'controller_ms' =>
+                $controllerMs,
         ],
     ]);
 }
