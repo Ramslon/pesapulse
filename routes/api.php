@@ -56,12 +56,33 @@ Route::get('/diagnostic-throttle', function () {
 Route::get('/diagnostic-db', function () {
     $startedAt = microtime(true);
 
-    $dbStartedAt = microtime(true);
+    // First query.
+    $firstStartedAt = microtime(true);
 
-    $result = DB::select('SELECT 1 AS test');
+    $first = DB::select('SELECT 1 AS test');
 
-    $dbMs = round(
-        (microtime(true) - $dbStartedAt) * 1000,
+    $firstMs = round(
+        (microtime(true) - $firstStartedAt) * 1000,
+        2
+    );
+
+    // Second query using the same Laravel database connection.
+    $secondStartedAt = microtime(true);
+
+    $second = DB::select('SELECT 1 AS test');
+
+    $secondMs = round(
+        (microtime(true) - $secondStartedAt) * 1000,
+        2
+    );
+
+    // Third query.
+    $thirdStartedAt = microtime(true);
+
+    $third = DB::select('SELECT 1 AS test');
+
+    $thirdMs = round(
+        (microtime(true) - $thirdStartedAt) * 1000,
         2
     );
 
@@ -72,9 +93,17 @@ Route::get('/diagnostic-db', function () {
 
     return response()->json([
         'status' => 'ok',
-        'database_result' => $result,
+
+        'results' => [
+            'first' => $first,
+            'second' => $second,
+            'third' => $third,
+        ],
+
         '_diagnostics' => [
-            'database_ms' => $dbMs,
+            'first_query_ms' => $firstMs,
+            'second_query_ms' => $secondMs,
+            'third_query_ms' => $thirdMs,
             'total_ms' => $totalMs,
         ],
     ]);
