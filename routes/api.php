@@ -46,6 +46,12 @@ Route::get('/diagnostic-sanctum', function (Request $request) {
     ]);
 })->middleware('auth:sanctum');
 
+Route::get('/diagnostic-throttle', function () {
+    return response()->json([
+        'status' => 'ok',
+    ]);
+})->middleware('throttle:api');
+
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
 
