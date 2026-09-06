@@ -535,6 +535,13 @@ public function updateProgress(Request $request, Goal $goal)
             2
         );
 
+        $requestStartedAt = microtime(true);
+
+        $controllerMs = round(
+    (microtime(true) - $requestStartedAt) * 1000,
+    2
+);
+
         return [
             'goal' => $freshGoal,
             'percentage' => $percentage,
@@ -544,6 +551,7 @@ public function updateProgress(Request $request, Goal $goal)
                 'lock_ms' => $lockMs,
                 'save_ms' => $saveMs,
                 'fresh_ms' => $freshMs,
+                'controller_ms' => $controllerMs,
             ],
         ];
     });
