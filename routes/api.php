@@ -56,7 +56,6 @@ Route::get('/diagnostic-throttle', function () {
 Route::get('/diagnostic-db', function () {
     $totalStartedAt = microtime(true);
 
-    // Force Laravel to establish the PDO connection.
     $connectionStartedAt = microtime(true);
 
     $pdo = DB::connection('mysql')->getPdo();
@@ -66,7 +65,6 @@ Route::get('/diagnostic-db', function () {
         2
     );
 
-    // Run a trivial query after the connection already exists.
     $queryStartedAt = microtime(true);
 
     $result = DB::select('SELECT 1 AS test');
@@ -83,7 +81,6 @@ Route::get('/diagnostic-db', function () {
 
     return response()->json([
         'status' => 'ok',
-
         'database_result' => $result,
 
         '_diagnostics' => [
@@ -94,7 +91,6 @@ Route::get('/diagnostic-db', function () {
         ],
     ]);
 });
-
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
 
