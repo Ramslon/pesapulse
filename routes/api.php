@@ -119,6 +119,38 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     'updateProfile'
     ])->middleware('throttle:write');
 
+    Route::post('/diagnostic-logout', function (Request $request) {
+    $startedAt = microtime(true);
+
+    $user = $request->user();
+
+    $userMs = round(
+        (microtime(true) - $startedAt) * 1000,
+        2
+    );
+
+    $token = $user->currentAccessToken();
+
+    $tokenMs = round(
+        (microtime(true) - $startedAt) * 1000,
+        2
+    );
+
+    return response()->json([
+        'status' => 'ok',
+        'user_id' => $user->id,
+        'token_id' => $token?->id,
+        '_diagnostics' => [
+            'user_ms' => $userMs,
+            'token_lookup_ms' => $tokenMs,
+            'total_ms' => round(
+                (microtime(true) - $startedAt) * 1000,
+                2
+            ),
+        ],
+    ]);
+    })->middleware('throttle:write');
+
 
     Route::post('/logout', [AuthController::class, 'logout'])
       ->middleware('throttle:write');
