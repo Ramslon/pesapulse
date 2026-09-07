@@ -54,57 +54,43 @@ Route::get('/diagnostic-throttle', function () {
 })->middleware('throttle:api');
 
 Route::get('/diagnostic-db', function () {
-    $startedAt = microtime(true);
+    $totalStartedAt = microtime(true);
 
-    // First query.
-    $firstStartedAt = microtime(true);
+    // Force Laravel to establish the PDO connection.
+    $connectionStartedAt = microtime(true);
 
-    $first = DB::select('SELECT 1 AS test');
+    $pdo = DB::connection('mysql')->getPdo();
 
-    $firstMs = round(
-        (microtime(true) - $firstStartedAt) * 1000,
+    $connectionMs = round(
+        (microtime(true) - $connectionStartedAt) * 1000,
         2
     );
 
-    // Second query using the same Laravel database connection.
-    $secondStartedAt = microtime(true);
+    // Run a trivial query after the connection already exists.
+    $queryStartedAt = microtime(true);
 
-    $second = DB::select('SELECT 1 AS test');
+    $result = DB::select('SELECT 1 AS test');
 
-    $secondMs = round(
-        (microtime(true) - $secondStartedAt) * 1000,
-        2
-    );
-
-    // Third query.
-    $thirdStartedAt = microtime(true);
-
-    $third = DB::select('SELECT 1 AS test');
-
-    $thirdMs = round(
-        (microtime(true) - $thirdStartedAt) * 1000,
+    $queryMs = round(
+        (microtime(true) - $queryStartedAt) * 1000,
         2
     );
 
     $totalMs = round(
-        (microtime(true) - $startedAt) * 1000,
+        (microtime(true) - $totalStartedAt) * 1000,
         2
     );
 
     return response()->json([
         'status' => 'ok',
 
-        'results' => [
-            'first' => $first,
-            'second' => $second,
-            'third' => $third,
-        ],
+        'database_result' => $result,
 
         '_diagnostics' => [
-            'first_query_ms' => $firstMs,
-            'second_query_ms' => $secondMs,
-            'third_query_ms' => $thirdMs,
+            'connection_ms' => $connectionMs,
+            'query_ms' => $queryMs,
             'total_ms' => $totalMs,
+            'pdo_driver' => $pdo->getAttribute(PDO::ATTR_DRIVER_NAME),
         ],
     ]);
 });
