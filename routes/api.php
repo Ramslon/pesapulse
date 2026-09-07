@@ -9,7 +9,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\Api\GuestMigrationController;
-use Illuminate\Support\Facades\DB;
+
 
 Route::middleware('throttle:auth')->group(function () {
 
@@ -34,73 +34,9 @@ Route::get('/health', function () {
     ]);
 });
 
-Route::get('/diagnostic-public', function () {
-    return response()->json([
-        'status' => 'ok',
-    ]);
-});
 
-Route::get('/diagnostic-sanctum', function (Request $request) {
-    return response()->json([
-        'status' => 'ok',
-        'user_id' => $request->user()->id,
-    ]);
-})->middleware('auth:sanctum');
-
-Route::get('/diagnostic-throttle', function () {
-    return response()->json([
-        'status' => 'ok',
-    ]);
-})->middleware('throttle:api');
-
-Route::get('/diagnostic-db', function () {
-    $totalStartedAt = microtime(true);
-
-    $connectionStartedAt = microtime(true);
-
-    $pdo = DB::connection('mysql')->getPdo();
-
-    $connectionMs = round(
-        (microtime(true) - $connectionStartedAt) * 1000,
-        2
-    );
-
-    $queryStartedAt = microtime(true);
-
-    $result = DB::select('SELECT 1 AS test');
-
-    $queryMs = round(
-        (microtime(true) - $queryStartedAt) * 1000,
-        2
-    );
-
-    $totalMs = round(
-        (microtime(true) - $totalStartedAt) * 1000,
-        2
-    );
-
-    return response()->json([
-        'status' => 'ok',
-        'database_result' => $result,
-
-        '_diagnostics' => [
-            'connection_ms' => $connectionMs,
-            'query_ms' => $queryMs,
-            'total_ms' => $totalMs,
-            'pdo_driver' => $pdo->getAttribute(PDO::ATTR_DRIVER_NAME),
-        ],
-    ]);
-});
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
-
-
-    Route::get('/diagnostic-auth', function (Request $request) {
-    return response()->json([
-        'status' => 'ok',
-        'user_id' => $request->user()->id,
-    ]);
-    });
 
     Route::get('/user', function (Request $request) {
     $user = $request->user();
@@ -119,38 +55,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     'updateProfile'
     ])->middleware('throttle:write');
 
-    Route::post('/diagnostic-logout', function (Request $request) {
-    $startedAt = microtime(true);
-
-    $user = $request->user();
-
-    $userMs = round(
-        (microtime(true) - $startedAt) * 1000,
-        2
-    );
-
-    $token = $user->currentAccessToken();
-
-    $tokenMs = round(
-        (microtime(true) - $startedAt) * 1000,
-        2
-    );
-
-    return response()->json([
-        'status' => 'ok',
-        'user_id' => $user->id,
-        'token_id' => $token?->id,
-        '_diagnostics' => [
-            'user_ms' => $userMs,
-            'token_lookup_ms' => $tokenMs,
-            'total_ms' => round(
-                (microtime(true) - $startedAt) * 1000,
-                2
-            ),
-        ],
-    ]);
-    })->middleware('throttle:write');
-
+    
 
     Route::post('/logout', [AuthController::class, 'logout'])
       ->middleware('throttle:write');

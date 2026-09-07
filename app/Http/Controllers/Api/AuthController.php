@@ -87,38 +87,13 @@ public function login(Request $request)
 
     public function logout(Request $request)
     {
-    $startedAt = microtime(true);
 
     $token = $request->user()->currentAccessToken();
 
-    $tokenLookupMs = round(
-        (microtime(true) - $startedAt) * 1000,
-        2
-    );
-
-    $deleteStartedAt = microtime(true);
-
     $token->delete();
 
-    $deleteMs = round(
-        (microtime(true) - $deleteStartedAt) * 1000,
-        2
-    );
-
-    $totalMs = round(
-        (microtime(true) - $startedAt) * 1000,
-        2
-    );
-
     return response()->json([
-        'message' => 'Logged out successfully',
-
-        '_diagnostics' => [
-            'token_lookup_ms' => $tokenLookupMs,
-            'delete_ms' => $deleteMs,
-            'total_ms' => $totalMs,
-            'token_id' => $token->id,
-        ],
+        'message' => 'Logged out successfully', 
     ]);
     }
     
