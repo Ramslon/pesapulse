@@ -28,22 +28,31 @@ class Subscription extends Model
     }
 
     public function isPremium(): bool
-    {
-        if ($this->plan !== 'premium') {
-            return false;
-        }
-
-        if ($this->status !== 'active') {
-            return false;
-        }
-
-        if (
-            $this->expires_at !== null &&
-            $this->expires_at->isPast()
-        ) {
-            return false;
-        }
-
-        return true;
+{
+    if ($this->plan !== 'premium') {
+        return false;
     }
+
+    if ($this->status !== 'active') {
+        return false;
+    }
+
+    $now = now();
+
+    if (
+        $this->starts_at !== null &&
+        $this->starts_at->isFuture()
+    ) {
+        return false;
+    }
+
+    if (
+        $this->expires_at !== null &&
+        $this->expires_at->isPast()
+    ) {
+        return false;
+    }
+
+    return true;
+}
 }
