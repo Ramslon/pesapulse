@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
@@ -47,6 +48,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
         'email' => $user->email,
     ]);
     });
+
+    Route::get('/subscription', [SubscriptionController::class, 'show']);
 
     Route::get('/profile', [AuthController::class, 'getProfile']);
 

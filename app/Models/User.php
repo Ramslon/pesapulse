@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Expense;
 use App\Models\Budget;
@@ -70,5 +71,10 @@ class User extends Authenticatable
 public function goals()
 {
     return $this->hasMany(Goal::class);
+}
+
+public function subscription(): HasOne
+{
+    return $this->hasOne(Subscription::class);
 }
 }
