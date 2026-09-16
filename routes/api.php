@@ -51,6 +51,16 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
 
     Route::get('/subscription', [SubscriptionController::class, 'show']);
 
+    Route::middleware('premium')->get(
+        '/premium-test',
+        function () {
+            return response()->json([
+                'message' => 'Premium access granted.',
+                'feature' => 'premium-test',
+            ]);
+        }
+    );
+
     Route::get('/profile', [AuthController::class, 'getProfile']);
 
     Route::put('/profile', [
