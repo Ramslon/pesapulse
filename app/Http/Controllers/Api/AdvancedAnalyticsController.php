@@ -300,40 +300,41 @@ class AdvancedAnalyticsController extends Controller
 
         $dailyValues = array_values($dailyTotals);
 
-        $averageDailySpending = count($dailyValues) > 0
-            ? $totalSpent / count($dailyValues)
-            : 0;
+$averageDailySpending = count($dailyValues) > 0
+    ? $totalSpent / count($dailyValues)
+    : 0;
 
-        $variance = 0;
+$variance = 0;
 
-        if (count($dailyValues) > 0) {
-            foreach ($dailyValues as $value) {
-                $variance += pow(
-                    $value - $averageDailySpending,
-                    2
-                );
-            }
+if (count($dailyValues) > 0) {
+    foreach ($dailyValues as $value) {
+        $variance += pow(
+            $value - $averageDailySpending,
+            2
+        );
+    }
 
-            $variance /= count($dailyValues);
-        }
+    $variance /= count($dailyValues);
+}
 
-        $standardDeviation = sqrt($variance);
+$standardDeviation = sqrt($variance);
 
-        $consistencyRatio =
-            $averageDailySpending > 0
-                ? $standardDeviation /
-                    $averageDailySpending
-                : 0;
+$consistencyRatio =
+    $averageDailySpending > 0
+        ? $standardDeviation / $averageDailySpending
+        : 0;
 
-        if ($averageDailySpending <= 0) {
-            $consistencyLabel = 'No Data';
-        } elseif ($consistencyRatio < 0.5) {
-            $consistencyLabel = 'Consistent';
-        } elseif ($consistencyRatio < 1.0) {
-            $consistencyLabel = 'Moderate Variability';
-        } else {
-            $consistencyLabel = 'Highly Variable';
-        }
+$canCalculateConsistency = count($dailyValues) >= 2;
+
+if (!$canCalculateConsistency) {
+    $consistencyLabel = 'Insufficient Data';
+} elseif ($consistencyRatio < 0.5) {
+    $consistencyLabel = 'Consistent';
+} elseif ($consistencyRatio < 1.0) {
+    $consistencyLabel = 'Moderate Variability';
+} else {
+    $consistencyLabel = 'Highly Variable';
+}
 
         /*
         |--------------------------------------------------------------------------
@@ -387,29 +388,58 @@ class AdvancedAnalyticsController extends Controller
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | Spending trend
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| Spending trend
+|--------------------------------------------------------------------------
+*/
 
-        $monthlySpent = array_values(
-            collect($monthly)
-                ->pluck('spent')
-                ->all()
-        );
+$monthlySpent = array_values(
+    collect($monthly)
+        ->pluck('spent')
+        ->all()
+);
 
+$monthsWithSpending = array_values(
+    array_filter(
+        $monthlySpent,
+        fn ($amount) => (float) $amount > 0
+    )
+);
+
+$canCalculateTrend = count($monthsWithSpending) >= 2;
+
+$trend = 'insufficient_data';
+
+if ($canCalculateTrend) {
+    $first = (float) $monthsWithSpending[0];
+    $last = (float) $monthsWithSpending[count($monthsWithSpending) - 1];
+
+    if ($last > $first * 1.1) {
+        $trend = 'increasing';
+    } elseif ($last < $first * 0.9) {
+        $trend = 'decreasing';
+    } else {
         $trend = 'stable';
+    }
+}
 
-        if (count($monthlySpent) >= 2) {
-            $first = $monthlySpent[0];
-            $last = $monthlySpent[count($monthlySpent) - 1];
+        /*
+|--------------------------------------------------------------------------
+| Data quality / availability metadata
+|--------------------------------------------------------------------------
+|
+| Explicitly tells the client whether derived insights can be
+| meaningfully calculated instead of forcing Flutter to infer this.
+|--------------------------------------------------------------------------
+*/
 
-            if ($last > $first * 1.1) {
-                $trend = 'increasing';
-            } elseif ($last < $first * 0.9) {
-                $trend = 'decreasing';
-            }
-        }
+$dataQuality = [
+    'months_available' => $months,
+    'months_with_spending' => count($monthsWithSpending),
+    'spending_days' => count($dailyValues),
+    'can_calculate_trend' => $canCalculateTrend,
+    'can_calculate_consistency' => $canCalculateConsistency,
+];
 
         /*
         |--------------------------------------------------------------------------
@@ -418,54 +448,56 @@ class AdvancedAnalyticsController extends Controller
         */
 
         return response()->json([
-            'period' => [
-                'months' => $months,
-                'start' => $startDate->toDateString(),
-                'end' => $endDate->toDateString(),
-            ],
+    'period' => [
+        'months' => $months,
+        'start' => $startDate->toDateString(),
+        'end' => $endDate->toDateString(),
+    ],
 
-            'summary' => [
-                'total_spent' => $totalSpent,
-                'total_budget' => $totalBudget,
-                'remaining' => $totalRemaining,
-                'average_monthly_spending' =>
-                    $averageMonthlySpending,
-                'expense_count' => $expenses->count(),
-            ],
+    'data_quality' => $dataQuality,
 
-            'comparison' => [
-                'previous_period_spending' =>
-                    $previousTotalSpent,
-                'change_amount' =>
-                    $spendingChange,
-                'change_percentage' =>
-                    $spendingChangePercentage,
-            ],
+    'summary' => [
+        'total_spent' => $totalSpent,
+        'total_budget' => $totalBudget,
+        'remaining' => $totalRemaining,
+        'average_monthly_spending' =>
+            $averageMonthlySpending,
+        'expense_count' => $expenses->count(),
+    ],
 
-            'trend' => [
-                'direction' => $trend,
-                'monthly' => array_values($monthly),
-            ],
+    'comparison' => [
+        'previous_period_spending' =>
+            $previousTotalSpent,
+        'change_amount' =>
+            $spendingChange,
+        'change_percentage' =>
+            $spendingChangePercentage,
+    ],
 
-            'categories' => [
-                'breakdown' => $categoryBreakdown,
-                'top_category' => !empty($categoryBreakdown)
-                    ? $categoryBreakdown[0]['category']
-                    : null,
-            ],
+    'trend' => [
+        'direction' => $trend,
+        'monthly' => array_values($monthly),
+    ],
 
-            'spending_consistency' => [
-                'average_daily_spending' =>
-                    round($averageDailySpending, 2),
-                'standard_deviation' =>
-                    round($standardDeviation, 2),
-                'label' => $consistencyLabel,
-            ],
+    'categories' => [
+        'breakdown' => $categoryBreakdown,
+        'top_category' => !empty($categoryBreakdown)
+            ? $categoryBreakdown[0]['category']
+            : null,
+    ],
 
-            'highest_spending_day' =>
-                $highestSpendingDay,
+    'spending_consistency' => [
+        'average_daily_spending' =>
+            round($averageDailySpending, 2),
+        'standard_deviation' =>
+            round($standardDeviation, 2),
+        'label' => $consistencyLabel,
+    ],
 
-            'anomalies' => $anomalies,
-        ]);
+    'highest_spending_day' =>
+        $highestSpendingDay,
+
+    'anomalies' => $anomalies,
+]);
     }
 }
