@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;   // ✅ import the base Controller
 use App\Services\AdvancedBudgetInsightsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
