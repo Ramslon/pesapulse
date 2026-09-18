@@ -130,7 +130,7 @@ class AdvancedGoalTrackingService
 
                 'target_date' => null,
                 'days_remaining' => null,
-
+                
                 'average_daily_saving_since_creation' =>
                     round($saved / $elapsedDays, 2),
 
@@ -197,7 +197,7 @@ class AdvancedGoalTrackingService
         */
 
         $elapsedForProgress = max(
-            0,
+            1,
             min(
                 $createdAt->diffInDays(
                     $today,
@@ -334,15 +334,17 @@ class AdvancedGoalTrackingService
             $averageDailySaving > 0 &&
             $requiredDailySaving > 0
         ) {
-            $projectedDaysRemaining = (
+            $projectedDaysRemaining = max(
+                1,
+                (int) ceil(
                 $remaining /
                 $averageDailySaving
+                )
             );
 
-            $daysAheadBehind = (int) round(
+            $daysAheadBehind = 
                 $remainingDays -
-                $projectedDaysRemaining
-            );
+                $projectedDaysRemaining;
         }
 
         /*
@@ -372,6 +374,8 @@ class AdvancedGoalTrackingService
                 $targetDate->toDateString(),
 
             'days_remaining' => $remainingDays,
+
+            'elapsed_days_since_creation' => $elapsedDays,
 
             'average_daily_saving_since_creation' =>
                 round($averageDailySaving, 2),
