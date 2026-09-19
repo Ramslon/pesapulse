@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\AdvancedAnalyticsController;
 use App\Http\Controllers\Api\AdvancedGoalTrackingController;
 use App\Http\Controllers\Api\AdvancedBudgetInsightsController;
+use App\Http\Controllers\Api\GoalForecastController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
@@ -191,6 +192,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
       ->middleware(['premium','throttle:expensive',]);
     
     Route::get('/advanced/goal-tracking', [AdvancedGoalTrackingController::class,'index',])
+      ->middleware(['premium','throttle:expensive',]);
+
+    Route::get('/advanced/goal-forecast', [GoalForecastController::class,'index',])
       ->middleware(['premium','throttle:expensive',]);
 
     Route::get('/goals/archived', [GoalController::class, 'archived']);
