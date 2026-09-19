@@ -397,7 +397,7 @@ class GoalForecastService
                 'days_elapsed' => $elapsedDays,
                 'days_remaining' => $daysRemaining,
 
-                'current_daily_saving' => 0,
+                'average_daily_saving_to_date' => 0,
                 'required_daily_saving' =>
                     $requiredDailySaving,
 
