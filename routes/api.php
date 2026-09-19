@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\AdvancedBudgetInsightsController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\Api\SpendingForecastController;
 use App\Http\Controllers\Api\GuestMigrationController;
 
 
@@ -185,6 +186,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
 
     Route::get('/goals/{goal}/forecast', [GoalController::class, 'forecast'])
       ->middleware('throttle:expensive');
+
+    Route::get('/advanced/spending-forecast', [SpendingForecastController::class, 'index',])
+      ->middleware(['premium','throttle:expensive',]);
     
     Route::get('/advanced/goal-tracking', [AdvancedGoalTrackingController::class,'index',])
       ->middleware(['premium','throttle:expensive',]);
