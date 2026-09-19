@@ -132,13 +132,22 @@ class SpendingForecastService
         );
 
         $averageMonthlySpending =
-            $monthsWithSpendingCount > 0
-                ? round(
-                    $totalHistoricalSpending /
-                    $monthsWithSpendingCount,
-                    2
-                )
-                : 0.0;
+    $monthsAvailable > 0
+        ? round(
+            $totalHistoricalSpending /
+            $monthsAvailable,
+            2
+        )
+        : 0.0;
+
+        $averageActiveMonthSpending =
+        $monthsWithSpendingCount > 0
+        ? round(
+            $totalHistoricalSpending /
+            $monthsWithSpendingCount,
+            2
+        )
+        : 0.0;
 
         /*
         |--------------------------------------------------------------------------
@@ -503,6 +512,9 @@ class SpendingForecastService
                 'average_monthly_spending' =>
                     $averageMonthlySpending,
 
+                'average_active_month_spending' => 
+                    $averageActiveMonthSpending,
+
                 'months_available' =>
                     $monthsAvailable,
 
@@ -560,6 +572,14 @@ class SpendingForecastService
 
                 'forecast_basis' =>
                     'Historical monthly spending using a linear trend model.',
+
+                'current_month_is_partial' =>
+                     now()->day < now()->daysInMonth,
+
+                'partial_month_note' =>
+                     now()->day < now()->daysInMonth
+                         ? 'The current month is still in progress and contains partial spending data.'
+                         : 'The latest historical month is complete.',
             ],
         ];
     }
