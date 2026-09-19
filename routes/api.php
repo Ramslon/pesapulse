@@ -12,7 +12,7 @@ use App\Http\Controllers\Api\AdvancedBudgetInsightsController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
-use App\Http\Controllers\Api\SpendingForecastController;
+use App\Http\Controllers\SpendingForecastController;
 use App\Http\Controllers\Api\GuestMigrationController;
 
 
