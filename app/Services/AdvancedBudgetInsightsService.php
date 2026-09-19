@@ -110,13 +110,14 @@ class AdvancedBudgetInsightsService
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | Pace difference
-        |--------------------------------------------------------------------------
-        |
-        | Positive = spending faster than expected.
-        | Negative = spending slower than expected.
-        */
+|--------------------------------------------------------------------------
+| Pace difference
+|--------------------------------------------------------------------------
+|
+| Positive = spending more of the budget than expected at this point.
+| Negative = spending less of the budget than expected at this point.
+|
+*/
 
         $paceDifference = round(
             $usagePercentage - $expectedUsagePercentage,
@@ -129,9 +130,9 @@ class AdvancedBudgetInsightsService
             if ($usagePercentage > 100) {
                 $paceStatus = 'over_budget';
             } elseif ($usagePercentage > $expectedUsagePercentage + 10) {
-                $paceStatus = 'ahead_of_budget_pace';
+                $paceStatus = 'above_budget_pace';
             } elseif ($usagePercentage < $expectedUsagePercentage - 10) {
-                $paceStatus = 'behind_budget_pace';
+                $paceStatus = 'under_budget_pace';
             } else {
                 $paceStatus = 'on_budget_pace';
             }
@@ -188,6 +189,8 @@ class AdvancedBudgetInsightsService
             ->count();
 
         $projectionConfidence = 'insufficient_data';
+
+        
 
         if ($hasExpenses) {
             if ($spendingDays >= 7) {
@@ -395,27 +398,6 @@ class AdvancedBudgetInsightsService
                 ];
             }
 
-            if ($allowedDailySpending !== null) {
-
-                $recommendations[] = [
-                    'type' => 'daily_limit',
-                    'priority' => 'medium',
-                    'title' => 'Use a daily spending limit',
-                    'message' =>
-                        "With KES "
-                        . number_format(
-                            max(0, $remaining),
-                            2
-                        )
-                        . " remaining, your budget allows about KES "
-                        . number_format(
-                            $allowedDailySpending,
-                            2
-                        )
-                        . " per remaining day.",
-                ];
-            }
-
             if ($topCategory !== null) {
 
                 $recommendations[] = [
@@ -431,16 +413,37 @@ class AdvancedBudgetInsightsService
         if (
             $hasBudget &&
             $hasExpenses &&
+            $pressureScore < 30 &&
             $projectedMonthEndSpending <= $budgetAmount
         ) {
 
             $recommendations[] = [
                 'type' => 'positive',
                 'priority' => 'low',
-                'title' => 'Maintain your current pace',
+                'title' => 'Your budget is comfortably paced',
                 'message' =>
-                    'Your current spending projection remains within the monthly budget.',
+                    'Your spending is currently below the expected budget pace. Continue tracking your expenses to keep the projection reliable.',
             ];
+        }
+
+        if (
+            $allowedDailySpending !== null &&
+         (
+            $paceStatus === 'above_budget_pace' ||
+            $projectedMonthEndSpending > $budgetAmount
+         )
+        ) {
+           $recommendations[] = [
+            'type' => 'daily_limit',
+            'priority' => 'high',
+            'title' => 'Use a daily spending limit',
+            'message' =>
+            "With KES "
+            . number_format(max(0, $remaining), 2)
+            . " remaining, your budget allows about KES "
+            . number_format($allowedDailySpending, 2)
+            . " per remaining day.",
+        ];
         }
 
         /*
@@ -517,6 +520,17 @@ class AdvancedBudgetInsightsService
 
                 'confidence' =>
                     $projectionConfidence,
+
+                'confidence_message' => match ($projectionConfidence) {
+                   'high' =>
+                   'The projection is based on at least seven spending days.',
+                   'medium' =>
+                   'The projection is based on several spending days and should be treated as an estimate.',
+                   'low' =>
+                    'Only a small amount of spending history is available, so the projection may change significantly.',
+                    default =>
+                     'There is not enough spending data to produce a reliable projection.',
+              },
             ],
 
             'pressure' => [
