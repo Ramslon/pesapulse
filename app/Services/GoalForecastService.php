@@ -15,8 +15,7 @@ class GoalForecastService
     ): array {
         $query = $user
             ->goals()
-            ->where('is_archived', false)
-            ->where('is_deleted', false);
+            ->where('is_archived', false);
 
         if ($goalId !== null) {
             $query->whereKey($goalId);
