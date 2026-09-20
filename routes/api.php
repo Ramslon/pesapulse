@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\AdvancedAnalyticsController;
 use App\Http\Controllers\Api\AdvancedGoalTrackingController;
 use App\Http\Controllers\Api\AdvancedBudgetInsightsController;
+use App\Http\Controllers\Api\BudgetSimulationController;
 use App\Http\Controllers\Api\GoalForecastController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
@@ -164,7 +165,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     'throttle:expensive',
    ]);
 
-    
+    Route::post('/advanced/budget-simulation', [BudgetSimulationController::class,'store',])
+     ->middleware(['premium','throttle:expensive',]);
+
     Route::post('/goals', [GoalController::class, 'store'])
       ->middleware('throttle:write');
 
