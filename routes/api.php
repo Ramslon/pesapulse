@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AdvancedGoalTrackingController;
 use App\Http\Controllers\Api\AdvancedBudgetInsightsController;
 use App\Http\Controllers\Api\BudgetSimulationController;
 use App\Http\Controllers\Api\GoalForecastController;
+use App\Http\Controllers\Api\HistoricalInsightsController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
@@ -166,6 +167,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
    ]);
 
     Route::post('/advanced/budget-simulation', [BudgetSimulationController::class,'store',])
+     ->middleware(['premium','throttle:expensive',]);
+
+    Route::get('/advanced/historical-insights', [HistoricalInsightsController::class,'index',])
      ->middleware(['premium','throttle:expensive',]);
 
     Route::post('/goals', [GoalController::class, 'store'])
