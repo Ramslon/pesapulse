@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\BudgetSimulationController;
 use App\Http\Controllers\Api\GoalForecastController;
 use App\Http\Controllers\Api\HistoricalInsightsController;
 use App\Http\Controllers\Api\SubscriptionCheckoutController;
+use App\Http\Controllers\Api\IntaSendWebhookController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
@@ -42,6 +43,11 @@ Route::get('/health', function () {
         'status' => 'ok',
     ]);
 });
+
+Route::post(
+    '/webhooks/intasend',
+    [IntaSendWebhookController::class, 'handle']
+);
 
 
 Route::middleware(['auth:sanctum', 'throttle:api'])

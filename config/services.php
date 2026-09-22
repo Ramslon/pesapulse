@@ -47,7 +47,16 @@ return [
         'premium_currency' => env(
         'PESAPULSE_PREMIUM_CURRENCY',
         'KES'
-      ),
+        ),
+
+        'webhook_challenge' => env(
+        'INTASEND_WEBHOOK_CHALLENGE'
+        ),
+
+        'premium_duration_days' => (int) env(
+        'PESAPULSE_PREMIUM_DURATION_DAYS',
+        30
+        ),
     ],
 
 ];

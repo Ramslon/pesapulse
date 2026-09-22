@@ -92,14 +92,16 @@ class SubscriptionCheckoutController extends Controller
             );
 
             $transaction->update([
-                'provider_transaction_id' =>
-                    $checkout->invoice_id ?? null,
-                'metadata' => [
-                    'checkout_response' => $this->normalizeResponse(
-                        $checkout
-                    ),
-                ],
-            ]);
+           'metadata' => [
+               'checkout_id' => $checkout->id ?? null,
+               'checkout_url' => $checkout->url ?? null,
+               'api_ref' => $checkout->api_ref ?? $reference,
+               'amount' => $checkout->amount ?? $amount,
+               'currency' => $checkout->currency ?? $currency,
+               'methods' => $checkout->methods ?? [],
+               'host' => $checkout->host ?? null,
+              ],
+           ]);
 
             return response()->json([
                 'message' => 'Premium checkout created successfully.',
@@ -123,13 +125,5 @@ class SubscriptionCheckoutController extends Controller
                 'code' => 'checkout_creation_failed',
             ], 502);
         }
-    }
-
-    private function normalizeResponse(object $response): array
-    {
-        return json_decode(
-            json_encode($response),
-            true
-        ) ?? [];
     }
 }
