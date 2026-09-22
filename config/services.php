@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'intasend' => [
+        'test' => env('INTASEND_TEST_ENVIRONMENT', true),
+
+        'publishable_key' => env('INTASEND_PUBLISHABLE_KEY'),
+
+        'secret_key' => env('INTASEND_SECRET_KEY'),
+
+        'premium_amount' => env('PESAPULSE_PREMIUM_AMOUNT'),
+
+        'premium_currency' => env(
+        'PESAPULSE_PREMIUM_CURRENCY',
+        'KES'
+      ),
+    ],
+
 ];

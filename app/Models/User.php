@@ -77,4 +77,9 @@ public function subscription(): HasOne
 {
     return $this->hasOne(Subscription::class);
 }
+
+public function paymentTransactions()
+{
+    return $this->hasMany(PaymentTransaction::class);
+}
 }

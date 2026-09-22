@@ -37,8 +37,6 @@ class Subscription extends Model
         return false;
     }
 
-    $now = now();
-
     if (
         $this->starts_at !== null &&
         $this->starts_at->isFuture()

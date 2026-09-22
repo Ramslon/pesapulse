@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\AdvancedBudgetInsightsController;
 use App\Http\Controllers\Api\BudgetSimulationController;
 use App\Http\Controllers\Api\GoalForecastController;
 use App\Http\Controllers\Api\HistoricalInsightsController;
+use App\Http\Controllers\Api\SubscriptionCheckoutController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GoalController;
@@ -57,6 +58,18 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     });
 
     Route::get('/subscription', [SubscriptionController::class, 'show']);
+
+    
+    Route::post(
+        '/subscription/checkout',
+        [SubscriptionCheckoutController::class, 'create']
+    )->middleware('throttle:10,1');
+
+    Route::get('/subscription/payment-return', function () {
+    return response()->json([
+        'message' => 'Payment flow returned to PesaPulse. Payment status is processed separately.',
+    ]);
+    });
 
     Route::middleware('premium')->get(
         '/premium-test',
