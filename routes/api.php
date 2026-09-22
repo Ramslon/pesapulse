@@ -63,7 +63,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     Route::post(
         '/subscription/checkout',
         [SubscriptionCheckoutController::class, 'create']
-    )->middleware('throttle:10,1');
+    )->middleware('throttle:sensitive');
 
     Route::get('/subscription/payment-return', function () {
     return response()->json([
