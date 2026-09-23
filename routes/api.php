@@ -49,6 +49,11 @@ Route::post(
     [IntaSendWebhookController::class, 'handle']
 );
 
+Route::get('/subscription/payment-return', [
+    SubscriptionCheckoutController::class,
+    'paymentReturn'
+])->name('subscription.payment.return');
+
 
 Route::middleware(['auth:sanctum', 'throttle:api'])
     ->group(function () {
@@ -69,12 +74,6 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     Route::post('/subscription/checkout',[SubscriptionCheckoutController::class, 'create']);
 
     Route::get('/subscription/payment-status',[SubscriptionCheckoutController::class, 'status']);
-
-    Route::get('/subscription/payment-return', function () {
-    return response()->json([
-        'message' => 'Payment flow returned to PesaPulse. Payment status is processed separately.',
-    ]);
-    });
 
     Route::middleware('premium')->get(
         '/premium-test',

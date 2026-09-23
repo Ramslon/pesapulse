@@ -7,6 +7,7 @@ use App\Models\PaymentTransaction;
 use App\Services\IntaSendService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -81,6 +82,11 @@ class SubscriptionCheckoutController extends Controller
             ? implode(' ', array_slice($nameParts, 1))
             : 'User';
 
+        $redirectUrl = route(
+            'subscription.payment.return',
+           ['reference' => $reference]
+        );
+
         try {
             $checkout = $this->intaSend->createCheckout(
                 amount: $amount,
@@ -95,6 +101,7 @@ class SubscriptionCheckoutController extends Controller
            'metadata' => [
                'checkout_id' => $checkout->id ?? null,
                'checkout_url' => $checkout->url ?? null,
+               'redirect_url' => $checkout->redirect_url ?? $redirectUrl,
                'api_ref' => $checkout->api_ref ?? $reference,
                'amount' => $checkout->amount ?? $amount,
                'currency' => $checkout->currency ?? $currency,
@@ -225,4 +232,80 @@ class SubscriptionCheckoutController extends Controller
 
     return 'Payment failed. Please try again.';
     }
+
+    public function paymentReturn(Request $request): Response
+{
+    $reference = $request->query('reference');
+
+    return response(
+        '<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>PesaPulse Payment</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background: #f5f7fb;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    margin: 0;
+                }
+
+                .card {
+                    background: white;
+                    padding: 32px;
+                    border-radius: 16px;
+                    max-width: 480px;
+                    width: calc(100% - 40px);
+                    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+                    text-align: center;
+                }
+
+                h1 {
+                    margin-bottom: 12px;
+                }
+
+                p {
+                    color: #666;
+                    line-height: 1.6;
+                }
+
+                .reference {
+                    margin-top: 20px;
+                    padding: 12px;
+                    background: #f1f3f8;
+                    border-radius: 8px;
+                    word-break: break-all;
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h1>Payment Return</h1>
+                <p>
+                    You have returned to PesaPulse from the payment page.
+                </p>
+                <p>
+                    Payment confirmation is handled separately by the payment provider webhook.
+                    You may now return to the PesaPulse app.
+                </p>'
+                . (
+                    $reference
+                        ? '<div class="reference"><strong>Reference:</strong><br>'
+                            . e($reference)
+                            . '</div>'
+                        : ''
+                ) .
+            '</div>
+        </body>
+        </html>',
+        200,
+        ['Content-Type' => 'text/html']
+    );
+   }
 }
