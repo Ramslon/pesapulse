@@ -126,4 +126,103 @@ class SubscriptionCheckoutController extends Controller
             ], 502);
         }
     }
+
+    public function status(Request $request): JsonResponse
+    {
+    $validated = $request->validate([
+        'reference' => [
+            'required',
+            'string',
+            'max:100',
+        ],
+    ]);
+
+    $user = $request->user();
+
+    $transaction = PaymentTransaction::query()
+        ->where('user_id', $user->id)
+        ->where('provider', 'intasend')
+        ->where('reference', $validated['reference'])
+        ->first();
+
+    if (!$transaction) {
+        return response()->json([
+            'message' => 'Payment transaction not found.',
+            'code' => 'payment_not_found',
+        ], 404);
+    }
+
+    $subscription = $user->subscription;
+
+    $status = strtolower($transaction->status);
+
+    return response()->json([
+        'reference' => $transaction->reference,
+
+        'transaction' => [
+            'status' => $status,
+            'amount' => (float) $transaction->amount,
+            'currency' => $transaction->currency,
+            'payment_method' => $transaction->payment_method,
+            'paid_at' => $transaction->paid_at?->toISOString(),
+        ],
+
+        'subscription' => [
+            'plan' => $subscription?->plan ?? 'basic',
+            'status' => $subscription?->status ?? 'active',
+            'is_premium' => $subscription?->isPremium() ?? false,
+            'starts_at' => $subscription?->starts_at?->toISOString(),
+            'expires_at' => $subscription?->expires_at?->toISOString(),
+        ],
+
+        'status' => $status,
+        'is_premium' => $subscription?->isPremium() ?? false,
+        'message' => $this->paymentStatusMessage($transaction),
+    ]);
+  }
+
+    private function paymentStatusMessage(
+       PaymentTransaction $transaction
+    ): string {
+    return match (strtolower($transaction->status)) {
+        'complete' =>
+            'Payment confirmed. PesaPulse Premium is now active.',
+
+        'processing' =>
+            'Your payment is still being processed.',
+
+        'pending' =>
+            'Your payment is still being confirmed.',
+
+        'failed' => $this->failedPaymentMessage($transaction),
+
+        default =>
+            'The payment status is currently unavailable.',
+    };
+   }
+
+    private function failedPaymentMessage(
+    PaymentTransaction $transaction
+    ): string {
+    $metadata = is_array($transaction->metadata)
+        ? $transaction->metadata
+        : [];
+
+    $webhook = is_array($metadata['webhook'] ?? null)
+        ? $metadata['webhook']
+        : [];
+
+    $reason = strtolower(
+        (string) ($webhook['failed_reason'] ?? '')
+    );
+
+    if (
+        str_contains($reason, 'insufficient') ||
+        str_contains($reason, 'balance')
+    ) {
+        return 'Payment failed due to insufficient funds. Please top up and try again.';
+    }
+
+    return 'Payment failed. Please try again.';
+    }
 }

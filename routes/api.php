@@ -66,9 +66,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     Route::get('/subscription', [SubscriptionController::class, 'show']);
 
     
-    Route::post(
-        '/subscription/checkout',
-        [SubscriptionCheckoutController::class, 'create']);
+    Route::post('/subscription/checkout',[SubscriptionCheckoutController::class, 'create']);
+
+    Route::get('/subscription/payment-status',[SubscriptionCheckoutController::class, 'status']);
 
     Route::get('/subscription/payment-return', function () {
     return response()->json([
