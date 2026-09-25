@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class ExpenseController extends Controller
 {
@@ -52,43 +54,74 @@ class ExpenseController extends Controller
     }
 
     /**
-     * Create a new expense.
+    * Create a new expense.
+   */
+   public function store(Request $request)
+   {
+    $validated = $request->validate([
+        'client_id' => [
+            'nullable',
+            'string',
+            'max:100',
+        ],
+
+        'title' => [
+            'required',
+            'string',
+            'max:255',
+        ],
+
+        'amount' => [
+            'required',
+            'numeric',
+            'min:0.01',
+            'max:999999999.99',
+        ],
+
+        'category' => [
+            'required',
+            'string',
+            'max:100',
+        ],
+
+        'expense_date' => [
+            'required',
+            'date',
+        ],
+
+        'description' => [
+            'nullable',
+            'string',
+            'max:1000',
+        ],
+    ]);
+
+    $user = $request->user();
+
+    $clientId = isset($validated['client_id'])
+        ? trim($validated['client_id'])
+        : null;
+
+    /*
+     * If the same client_id already exists for this user,
+     * return the original expense instead of creating another one.
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+    if ($clientId !== null && $clientId !== '') {
+        $existingExpense = $user->expenses()
+            ->where('client_id', $clientId)
+            ->first();
 
-            'amount' => [
-                'required',
-                'numeric',
-                'min:0.01',
-                'max:999999999.99',
-            ],
+        if ($existingExpense) {
+            return response()->json([
+                ...$existingExpense->toArray(),
+                'deduplicated' => true,
+            ], 200);
+        }
+    }
 
-            'category' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'expense_date' => [
-                'required',
-                'date',
-            ],
-
-            'description' => [
-                'nullable',
-                'string',
-                'max:1000',
-            ],
-        ]);
-
-        $expense = $request->user()->expenses()->create([
+    try {
+        $expense = $user->expenses()->create([
+            'client_id' => $clientId,
             'title' => trim($validated['title']),
             'amount' => $validated['amount'],
             'category' => trim($validated['category']),
@@ -98,7 +131,43 @@ class ExpenseController extends Controller
                 : null,
         ]);
 
-        return response()->json($expense, 201);
+        return response()->json([
+            ...$expense->toArray(),
+            'deduplicated' => false,
+        ], 201);
+
+    } catch (\Illuminate\Database\QueryException $e) {
+
+        /*
+         * A simultaneous identical request may have inserted
+         * the same client_id before this request completed.
+         *
+         * MySQL duplicate-key error = 1062.
+         */
+        if (
+            $clientId !== null &&
+            $clientId !== '' &&
+            isset($e->errorInfo[1]) &&
+            (int) $e->errorInfo[1] === 1062 &&
+            str_contains(
+                strtolower($e->getMessage()),
+                'expenses_user_client_unique'
+            )
+        ) {
+            $existingExpense = $user->expenses()
+                ->where('client_id', $clientId)
+                ->first();
+
+            if ($existingExpense) {
+                return response()->json([
+                    ...$existingExpense->toArray(),
+                    'deduplicated' => true,
+                ], 200);
+            }
+        }
+
+        throw $e;
+     }
     }
 
     /**
@@ -235,4 +304,3 @@ class ExpenseController extends Controller
         ]);
     }
 }
-
