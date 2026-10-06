@@ -31,7 +31,6 @@ public function store(Request $request)
     | SECURITY
     |--------------------------------------------------------------------------
     | The authenticated Sanctum user determines ownership.
-    | Never accept user_id from the client.
     */
 
     $user = $request->user();
@@ -40,8 +39,6 @@ public function store(Request $request)
     |--------------------------------------------------------------------------
     | Current budget period
     |--------------------------------------------------------------------------
-    | The server determines the month and year.
-    | The client cannot choose or manipulate the budget period.
     */
 
     $month = now()->month;
@@ -49,8 +46,11 @@ public function store(Request $request)
 
     /*
     |--------------------------------------------------------------------------
-    | Find the authenticated user's current-month budget
+    | Find current month's budget
     |--------------------------------------------------------------------------
+    |
+    | A budget belongs to one user for one month/year.
+    |
     */
 
     $budget = Budget::where('user_id', $user->id)
@@ -60,7 +60,7 @@ public function store(Request $request)
 
     /*
     |--------------------------------------------------------------------------
-    | Update existing budget
+    | Update existing current-month budget
     |--------------------------------------------------------------------------
     */
 
@@ -68,13 +68,10 @@ public function store(Request $request)
         $budget->amount = $validated['amount'];
 
         /*
-        | Keep the existing client_id.
+        | Preserve the existing client ID.
         |
-        | This is important because editing a budget must not create
-        | a new client identity.
-        |
-        | If an old budget has no client_id, use the client_id
-        | supplied by the client.
+        | Only assign one when the existing budget does not
+        | already have one.
         */
 
         if (
@@ -89,25 +86,23 @@ public function store(Request $request)
 
     /*
     |--------------------------------------------------------------------------
-    | Create new budget
+    | Create current-month budget
     |--------------------------------------------------------------------------
     */
 
     else {
-        $budget = new Budget();
-
-        $budget->user_id = $user->id;
-        $budget->client_id = $validated['client_id'] ?? null;
-        $budget->amount = $validated['amount'];
-        $budget->month = $month;
-        $budget->year = $year;
-
-        $budget->save();
+        $budget = Budget::create([
+            'user_id' => $user->id,
+            'client_id' => $validated['client_id'] ?? null,
+            'amount' => $validated['amount'],
+            'month' => $month,
+            'year' => $year,
+        ]);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Return saved budget
+    | Response
     |--------------------------------------------------------------------------
     */
 
