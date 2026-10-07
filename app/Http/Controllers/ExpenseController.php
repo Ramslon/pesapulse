@@ -14,43 +14,64 @@ class ExpenseController extends Controller
      */
     public function index(Request $request)
     {
-        return $request->user()
-            ->expenses()
-            ->latest()
-            ->paginate(5);
-    }
+    $validated = $request->validate([
+        'month' => ['nullable', 'integer', 'between:1,12'],
+        'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+    ]);
 
+    $month = $validated['month'] ?? now()->month;
+    $year = $validated['year'] ?? now()->year;
+
+    return $request->user()
+        ->expenses()
+        ->whereMonth('expense_date', $month)
+        ->whereYear('expense_date', $year)
+        ->latest('expense_date')
+        ->latest('id')
+        ->paginate(5);
+    }
     /**
      * Search authenticated user's expenses.
      */
     public function search(Request $request)
     {
-        $request->validate([
-            'title' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', 'max:100'],
-        ]);
+    $validated = $request->validate([
+        'title' => ['nullable', 'string', 'max:255'],
+        'category' => ['nullable', 'string', 'max:100'],
+        'month' => ['nullable', 'integer', 'between:1,12'],
+        'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+    ]);
 
-        $query = $request->user()->expenses();
+    $month = $validated['month'] ?? now()->month;
+    $year = $validated['year'] ?? now()->year;
 
-        if ($request->filled('title')) {
-            $query->where(
-                'title',
-                'LIKE',
-                '%' . trim($request->title) . '%'
-            );
-        }
+    $query = $request->user()
+        ->expenses()
+        ->whereMonth('expense_date', $month)
+        ->whereYear('expense_date', $year);
 
-        if ($request->filled('category')) {
-            $query->where(
-                'category',
-                'LIKE',
-                '%' . trim($request->category) . '%'
-            );
-        }
-
-        return response()->json(
-            $query->latest()->paginate(5)
+    if ($request->filled('title')) {
+        $query->where(
+            'title',
+            'LIKE',
+            '%' . trim($request->title) . '%'
         );
+    }
+
+    if ($request->filled('category')) {
+        $query->where(
+            'category',
+            'LIKE',
+            '%' . trim($request->category) . '%'
+        );
+    }
+
+    return response()->json(
+        $query
+            ->latest('expense_date')
+            ->latest('id')
+            ->paginate(5)
+    );
     }
 
     /**
@@ -260,20 +281,38 @@ class ExpenseController extends Controller
      */
     public function analytics(Request $request)
     {
-        $expenses = $request->user()->expenses()->get();
+    $validated = $request->validate([
+        'month' => ['nullable', 'integer', 'between:1,12'],
+        'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+    ]);
 
-        $total = $expenses->sum('amount');
+    $month = $validated['month'] ?? now()->month;
+    $year = $validated['year'] ?? now()->year;
 
-        $categories = $expenses
-            ->groupBy('category')
-            ->map(function ($items) {
-                return $items->sum('amount');
-            });
+    $expenses = $request->user()
+        ->expenses()
+        ->whereMonth('expense_date', $month)
+        ->whereYear('expense_date', $year)
+        ->get();
 
-        return response()->json([
-            'total_spending' => $total,
-            'categories' => $categories,
-        ]);
+    $total = $expenses->sum('amount');
+
+    $categories = $expenses
+        ->groupBy('category')
+        ->map(function ($items) {
+            return $items->sum('amount');
+        });
+
+    return response()->json([
+        'period' => [
+            'month' => $month,
+            'year' => $year,
+        ],
+
+        'total_spending' => $total,
+
+        'categories' => $categories,
+    ]);
     }
 
     /**
@@ -281,26 +320,33 @@ class ExpenseController extends Controller
      */
     public function dashboard(Request $request)
     {
-        $user = $request->user();
+    $user = $request->user();
 
-        $recentExpenses = $user->expenses()
-            ->latest('expense_date')
-            ->latest('id')
-            ->take(3)
-            ->get();
+    $month = now()->month;
+    $year = now()->year;
 
-        return response()->json([
-            'summary' => [
-                'total_expenses' => $user->expenses()->sum('amount'),
+    $currentExpenses = $user->expenses()
+        ->whereMonth('expense_date', $month)
+        ->whereYear('expense_date', $year);
 
-                'total_count' => $user->expenses()->count(),
+    $recentExpenses = (clone $currentExpenses)
+        ->latest('expense_date')
+        ->latest('id')
+        ->take(3)
+        ->get();
 
-                'categories' => $user->expenses()
-                    ->distinct('category')
-                    ->count('category'),
-            ],
+    return response()->json([
+        'summary' => [
+            'total_expenses' => (clone $currentExpenses)->sum('amount'),
 
-            'recent_expenses' => $recentExpenses,
-        ]);
-    }
+            'total_count' => (clone $currentExpenses)->count(),
+
+            'categories' => (clone $currentExpenses)
+                ->distinct('category')
+                ->count('category'),
+        ],
+
+        'recent_expenses' => $recentExpenses,
+    ]);
+   }
 }
