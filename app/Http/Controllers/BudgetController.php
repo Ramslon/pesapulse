@@ -126,8 +126,13 @@ private function getExpensesForPeriod($user, int $month, int $year)
         |--------------------------------------------------------------------------
         */
 
-        $month = (int) $validated['month'] ?? now()->month;
-        $year = (int) $validated['year'] ?? now()->year;
+        $month = isset($validated['month'])
+        ? (int) $validated['month']
+        : now()->month;
+
+        $year = isset($validated['year'])
+        ? (int) $validated['year']
+        : now()->year;
 
         $this->assertValidBudgetPeriod($month, $year);
 
