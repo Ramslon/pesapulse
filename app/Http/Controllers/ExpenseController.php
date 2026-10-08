@@ -349,4 +349,16 @@ class ExpenseController extends Controller
         'recent_expenses' => $recentExpenses,
     ]);
    }
+
+   /**
+   * Return all authenticated user's expenses for historical analytics.
+   */
+    public function all(Request $request)
+   {
+    return $request->user()
+        ->expenses()
+        ->latest('expense_date')
+        ->latest('id')
+        ->paginate(50);
+   }
 }

@@ -151,6 +151,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])
     'dashboard'
     ]);
 
+    Route::get(
+    '/expenses/all',
+    [ExpenseController::class, 'all']
+    );
+
     Route::apiResource(
         'expenses',
         ExpenseController::class
